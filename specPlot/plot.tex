@@ -1,0 +1,141 @@
+% Plot quick method using pgfplots to plot spect
+%
+% Copyright (C) 2014 Alex J. Grede
+% GPL v3, See LICENSE.txt for details
+% This function is part of specPlot
+
+\documentclass[tikz]{standalone}
+\usepackage{stix}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{xfrac}
+\usepackage{bm}
+\usepackage[use-xspace=true,
+redefine-symbols=false,
+range-units=single,
+inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
+\sisetup{detect-all}
+\edef\dtapth{\jobname.csv}
+\DeclareSIUnit\decade{decade}
+\DeclareSIUnit\arb{a.u.}
+
+\pgfplotsset{
+  compat=1.11,
+  width=8.8cm,
+  label style={font=\large},
+  tick label style={font=\normalsize},
+  every axis/.append style={
+    very thick,
+    line cap=rect,
+    tick style={very thick,line cap=rect,black}
+  },
+  every axis plot/.append style={thick}
+}
+
+\definecolor{color0}{HTML}{5C8540}
+\definecolor{color1}{HTML}{7D6BCF}
+\definecolor{color2}{HTML}{BE5F2F}
+\definecolor{color3}{HTML}{66BCBA}
+\definecolor{color4}{HTML}{8AD643}
+\definecolor{color5}{HTML}{44496F}
+\definecolor{color6}{HTML}{D0B648}
+\definecolor{color7}{HTML}{97A1D0}
+\definecolor{color8}{HTML}{454324}
+\definecolor{color9}{HTML}{7ED98F}
+
+\pgfplotscreateplotcyclelist{mycolor}{%
+  color0,color1,color2,color3,color4,color5,color6,color7,color8,color9}
+
+\begin{document}
+\begin{tikzpicture}
+  \begin{axis}[
+    scale only axis,
+    axis x line*=bottom,
+    cycle list name = mycolor,
+    xmin=(( limits['xmin'] )),xmax=(( limits['xmax'] )),
+    xtick = {(( ticks['xmajor'] ))},
+    xticklabels = {(( ticks['xlables']))},
+    minor xtick={(( ticks['xminor'] ))},
+    xlabel={\textbf{%
+        (( labels['xlabel']['text'] ))%
+        (< if labels['xlabel']['symbol'] is defined >)
+        \(\bm{\left( (( labels['xlabel']['symbol'] )) \right)}\)
+        (< endif >)
+        (< if labels['xlabel']['units'] is defined >)
+        \(\bm{\left[
+            (< if labels['xlabel']['mult'] is defined >)
+            \times
+            \protect{\SI{(( labels['xlabel']['mult'] ))}{(( labels['xlabel']['units'] ))}}
+            (< else >)
+            \protect{\si{(( labels['xlabel']['units'] ))}}
+            (< endif >)
+          \right]}\)
+      }},
+    ymin=(( limits['ymin'] )),ymax=(( limits['ymax'] )),
+    ytick = {(( ticks['ymajor'] ))},
+    yticklabels = {(( ticks['ylables']))},
+    minor ytick = {(( ticks['yminor'] ))},
+    ylabel={\textbf{%
+        (( labels['ylabel']['text'] ))%
+        (< if labels['ylabel']['symbol'] is defined >)
+        \(\bm{\left( (( labels['ylabel']['symbol'] )) \right)}\)
+        (< endif >)
+        (< if labels['ylabel']['units'] is defined >)
+        \(\bm{\left[
+            (< if labels['ylabel']['mult'] is defined >)
+            \times
+            \protect{\SI{(( labels['ylabel']['mult'] ))}{(( labels['ylabel']['units'] ))}}
+            (< else >)
+            \protect{\si{(( labels['ylabel']['units'] ))}}
+            (< endif >)
+          \right]}\)
+      }},
+    legend style = {
+      at={(axis cs:(( legend['position'] )))},
+      anchor=(( legend['anchor'] )),
+      font={\footnotesize},
+      cells={anchor=west},
+      draw=none}
+    ]
+
+    (< for idx,leg in enumerate(legend)  >)
+
+    \addplot+[no markers, solid, smooth]
+    table [x index=0,y index=(( idx+1 )),col sep=comma]{\dtapth};
+
+    \addlegendentry{(( leg ))}
+
+    (< endfor >)
+  \end{axis}
+  \begin{axis}[
+    scale only axis,
+    axis x line*=top,
+    xmin=(( limits['xmin'] )),xmax=(( limits['xmax'] )),
+    xtick = {(( ticks['x2major'] ))},
+    minor xtick = {(( ticks['x2minor'] ))},
+    xticklabels = {(( ticks['x2lables']))},
+    xlabel={\textbf{%
+        (( labels['x2label']['text'] ))%
+        (< if labels['x2label']['symbol'] is defined >)
+        \(\bm{\left( (( labels['x2label']['symbol'] )) \right)}\)
+        (< endif >)
+        (< if labels['x2label']['units'] is defined >)
+        \(\bm{\left[
+            (< if labels['x2label']['mult'] is defined >)
+            \times
+            \protect{\SI{(( labels['x2label']['mult'] ))}{(( labels['x2label']['units'] ))}}
+            (< else >)
+            \protect{\si{(( labels['x2label']['units'] ))}}
+            (< endif >)
+          \right]}\)
+      }},
+    ymin=(( limits['ymin'] )),ymax=(( limits['ymax'] )),
+    hide y axis]
+  \end{axis}
+\end{tikzpicture}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
