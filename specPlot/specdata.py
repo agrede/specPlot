@@ -28,8 +28,12 @@ def measurement(paths, cal, ind, t=1.0):
     cal = np.atleast_2d(cal).transpose()
     Phi = np.zeros((ind.size, 0), float)
     for idx, path in enumerate(paths):
+        if (type(t) is np.ndarray):
+            tint = t[idx]
+        else:
+            tint = t
         tmp = np.genfromtxt(path, delimiter=",", skip_header=2)
-        Phi = np.hstack((Phi, tmp[ind, 1:]*cal/t))
+        Phi = np.hstack((Phi, tmp[ind, 1:]*cal/tint))
     return Phi
 
 
