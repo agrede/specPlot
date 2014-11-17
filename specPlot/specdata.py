@@ -24,6 +24,22 @@ def calibration(measpath, refpath, t=1.0):
     return (lam, cor, ind)
 
 
+def calibration_error(measpath, refpath, t=1.0):
+    refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
+    measdata = np.genfromtxt(measpath, delimiter=",", skip_header=2)
+    ind = np.where((measdata[:, 0] >= refdata[:, 0].min()) *
+                   (measdata[:, 0] <= refdata[:, 0].max()))[0]
+    lam = measdata[ind, 0] * 1e-9
+    ref = interp1d(1e-9 * refdata[:, 0], refdata[:, 1], kind='cubic')
+    cor_tmp = (lam * t * ref(lam))/(codata.h * codata.c)
+    cor = cor_tmp/(measdata[ind, 1:].mean(axis=1))
+    corh = cor_tmp/(measdata[ind, 1:].mean(axis=1) +
+                    measdata[ind, 1:].std(axis=1))
+    corl = cor_tmp/(measdata[ind, 1:].mean(axis=1) -
+                    measdata[ind, 1:].std(axis=1))
+    return (lam, cor, corh, corl, ind)
+
+
 def measurement(paths, cal, ind, t=1.0):
     cal = np.atleast_2d(cal).transpose()
     Phi = np.zeros((ind.size, 0), float)

@@ -55,56 +55,63 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     scale only axis,
     axis x line*=bottom,
     cycle list name = mycolor,
-    xmin=(( limits['xmin'] )),xmax=(( limits['xmax'] )),
-    xtick = {(( ticks['xmajor'] ))},
-    xticklabels = {(( ticks['xlables']))},
-    minor xtick={(( ticks['xminor'] ))},
+    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
+    xtick = {((( ticks['xmajor']|join(', ') )))},
+    xticklabels = {((( ticks['xlabels']|join(', ') )))},%
+    ((* if ticks['xminor'] is defined *))%
+    minor xtick={((( ticks['xminor']|join(', ') )))},%
+    ((* endif *))%
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] )))%
-        ((* if labels['xlabel']['symbol'] is defined *))
-        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\)
-        ((* endif *))
-        ((* if labels['xlabel']['units'] is defined *))
-        \(\bm{\left[
-            ((* if labels['xlabel']['mult'] is defined *))
+        ((* if labels['xlabel']['symbol'] is defined *))%
+        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\)%
+        ((* endif *))%
+        ((* if labels['xlabel']['units'] is defined *))%
+        \(\bm{\left[%
+            ((* if labels['xlabel']['mult'] is defined *))%
             \times
             \protect{\SI{((( labels['xlabel']['mult'] )))}{((( labels['xlabel']['units'] )))}}
-            ((* else *))
-            \protect{\si{((( labels['xlabel']['units'] )))}}
-            ((* endif *))
-          \right]}\)
+            ((* else *))%
+            \protect{\si{((( labels['xlabel']['units'] )))}}%
+            ((* endif *))%
+          \right]}\)%
+        ((* endif *))%
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
-    ytick = {((( ticks['ymajor'] )))},
-    yticklabels = {((( ticks['ylables'] )))},
-    minor ytick = {((( ticks['yminor'] )))},
+    ytick = {((( ticks['ymajor']|join(', ') )))},
+    yticklabels = {((( ticks['ylabels']|join(', ') )))},%
+    ((* if ticks['yminor'] is defined *))%
+    minor ytick={((( ticks['yminor']|join(', ') )))},%
+    ((* endif *))%
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] )))%
-        ((* if labels['ylabel']['symbol'] is defined *))
-        \(\bm{\left( (( labels['ylabel']['symbol'] )) \right)}\)
-        ((* endif *))
-        ((* if labels['ylabel']['units'] is defined *))
-        \(\bm{\left[
-            ((* if labels['ylabel']['mult'] is defined *))
+        ((* if labels['ylabel']['symbol'] is defined *))%
+        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\)%
+        ((* endif *))%
+        ((* if labels['ylabel']['units'] is defined *))%
+        \(\bm{\left[%
+            ((* if labels['ylabel']['mult'] is defined *))%
             \times
-            \protect{\SI{((( labels['ylabel']['mult'] )))}{((( labels['ylabel']['units'] )))}}
-            ((* else *))
-            \protect{\si{((( labels['ylabel']['units'] )))}}
-            ((* endif *))
-          \right]}\)
+            \protect{\SI{((( labels['ylabel']['mult'] )))}{((( labels['ylabel']['units'] )))}}%
+            ((* else *))%
+            \protect{\si{((( labels['ylabel']['units'] )))}}%
+            ((* endif *))%
+          \right]}\)%
+        ((* endif *))%
       }},
-    legend style = {
-      at={(axis cs:((( legend['position'] ))))},
-      anchor=((( legend['anchor'] ))),
+    legend style = {%
+      % at={(axis cs:((( legend['position'] ))))},
+      % anchor=((( legend['anchor'] ))),
       font={\footnotesize},
       cells={anchor=west},
-      draw=none}
+      draw=none},
+    legend pos = north east
     ]
 
-    ((* for idx,leg in enumerate(legend) *))
+    ((* for leg in legend *))
 
     \addplot+[no markers, solid, smooth]
-    table [x index=0,y index=((( idx+1 ))),col sep=comma]{\dtapth};
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
 
     \addlegendentry{((( leg )))}
 
@@ -114,23 +121,26 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     scale only axis,
     axis x line*=top,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['x2major'] )))},
-    minor xtick = {((( ticks['x2minor'] )))},
-    xticklabels = {((( ticks['x2lables'] )))},
+    xtick = {((( ticks['x2major']|join(', ') )))},%
+    ((* if ticks['x2minor'] is defined *))%
+    minor xtick={((( ticks['x2minor']|join(', ') )))},%
+    ((* endif *))%
+    xticklabels = {((( ticks['x2labels']|join(', ') )))},
     xlabel={\textbf{%
-        ((( labels['x2label']['text'] )))%
-        ((* if labels['x2label']['symbol'] is defined *))
-        \(\bm{\left( ((( labels['x2label']['symbol'] ))) \right)}\)
-        ((* endif *))
-        ((* if labels['x2label']['units'] is defined *))
-        \(\bm{\left[
-            ((* if labels['x2label']['mult'] is defined *))
+        ((( labels['x2label']['text'] ))) %
+        ((* if labels['x2label']['symbol'] is defined *))%
+        \(\bm{\left( ((( labels['x2label']['symbol'] ))) \right)}\) %
+        ((* endif *))%
+        ((* if labels['x2label']['units'] is defined *))%
+        \(\bm{\left[%
+            ((* if labels['x2label']['mult'] is defined *))%
             \times
-            \protect{\SI{((( labels['x2label']['mult'] )))}{((( labels['x2label']['units'] )))}}
-            ((* else *))
-            \protect{\si{((( labels['x2label']['units'] )))}}
-            ((* endif *))
-          \right]}\)
+            \protect{\SI{((( labels['x2label']['mult'] )))}{((( labels['x2label']['units'] )))}}%
+            ((* else *))%
+            \protect{\si{((( labels['x2label']['units'] )))}}%
+            ((* endif *))%
+          \right]}\)%
+        ((* endif *))%
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     hide y axis]
