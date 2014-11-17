@@ -65,5 +65,11 @@ def norm_range(lam, lmin, lmax, Phi):
     return Phi/Phim
 
 
+def fix_jag(idx, Phi):
+    Phic = Phi
+    Phic[idx:, :] = Phi[idx:, :] * (Phi[[idx-1], :] / Phi[[idx], :])
+    return Phic
+
+
 def integrate_flux(lam, Phi, lmin=None, lmax=None):
     pass

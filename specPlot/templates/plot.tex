@@ -62,15 +62,16 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     minor xtick={((( ticks['xminor']|join(', ') )))},%
     ((* endif *))%
     xlabel={\textbf{%
-        ((( labels['xlabel']['text'] )))%
+        ((( labels['xlabel']['text'] ))) %
         ((* if labels['xlabel']['symbol'] is defined *))%
-        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\)%
+        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\) %
         ((* endif *))%
         ((* if labels['xlabel']['units'] is defined *))%
         \(\bm{\left[%
             ((* if labels['xlabel']['mult'] is defined *))%
             \times
-            \protect{\SI{((( labels['xlabel']['mult'] )))}{((( labels['xlabel']['units'] )))}}
+            \protect{\SI{((( labels['xlabel']['mult'] )))}{(((
+                labels['xlabel']['units'] )))}} %
             ((* else *))%
             \protect{\si{((( labels['xlabel']['units'] )))}}%
             ((* endif *))%
@@ -84,15 +85,16 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     minor ytick={((( ticks['yminor']|join(', ') )))},%
     ((* endif *))%
     ylabel={\textbf{%
-        ((( labels['ylabel']['text'] )))%
+        ((( labels['ylabel']['text'] ))) %
         ((* if labels['ylabel']['symbol'] is defined *))%
-        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\)%
+        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\) %
         ((* endif *))%
         ((* if labels['ylabel']['units'] is defined *))%
         \(\bm{\left[%
             ((* if labels['ylabel']['mult'] is defined *))%
             \times
-            \protect{\SI{((( labels['ylabel']['mult'] )))}{((( labels['ylabel']['units'] )))}}%
+            \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
+                labels['ylabel']['units'] )))}} %
             ((* else *))%
             \protect{\si{((( labels['ylabel']['units'] )))}}%
             ((* endif *))%
