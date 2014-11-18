@@ -11,6 +11,7 @@ import scipy.constants as codata
 from scipy.interpolate import interp1d
 from glob import glob
 from plotspec import range_filter
+from datetime import datetime
 
 
 def calibration(measpath, refpath, t=1.0):
@@ -78,7 +79,16 @@ def integrate_flux(lam, Phi, rngs=None):
                 'y': np.array([Phi.min(), Phi.max()])}
     (lam, Phi) = range_filter(lam, Phi, rngs)
     iPhi = np.zeros((1, Phi.shape[1]))
-    for k in range(0, Phi.shape[1]-1):
+    for k in range(0, Phi.shape[1]):
         kn = np.where(~np.isnan(Phi[:, k]))[0]
         iPhi[0, k] = np.trapz(Phi[kn, k], lam[kn, 0])
     return iPhi
+
+
+def find_times(paths, fmt="%m/%d/%Y %H:%M:%S"):
+    dts = []
+    for path in paths:
+        with open(path, 'r') as f:
+            dts.extend([datetime.strptime(d, fmt) for d
+                        in f.readline()[:-1].split(',')[1:]])
+    return dts
