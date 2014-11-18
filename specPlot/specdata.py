@@ -10,6 +10,7 @@ import numpy as np
 import scipy.constants as codata
 from scipy.interpolate import interp1d
 from glob import glob
+from plotspec import range_filter
 
 
 def calibration(measpath, refpath, t=1.0):
@@ -71,5 +72,13 @@ def fix_jag(idx, Phi):
     return Phic
 
 
-def integrate_flux(lam, Phi, lmin=None, lmax=None):
-    pass
+def integrate_flux(lam, Phi, rngs=None):
+    if (rngs is None):
+        rngs = {'x': np.array([lam.min(), lam.max()]),
+                'y': np.array([Phi.min(), Phi.max()])}
+    (lam, Phi) = range_filter(lam, Phi, rngs)
+    iPhi = np.zeros((1, Phi.shape[1]))
+    for k in range(0, Phi.shape[1]-1):
+        kn = np.where(~np.isnan(Phi[:, k]))[0]
+        iPhi[0, k] = np.trapz(Phi[kn, k], lam[kn, 0])
+    return iPhi

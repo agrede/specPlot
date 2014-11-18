@@ -112,7 +112,7 @@ def range_filter(x, y, rngs):
     x = np.atleast_2d(x[kx]).transpose()
     y = y[kx, :]
     ky = np.where(((y < rngs['y'][0]) + (y > rngs['y'][1])) > 0)[0]
-    y[ky] = None
+    y[ky] = np.nan
     return (x, y)
 
 
