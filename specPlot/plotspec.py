@@ -183,6 +183,65 @@ def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
     f.close()
 
 
+def int_plot_lables(xlabel, xunit, xhighlight=None, hltxt=None, ypos=0.5):
+    lbl = {
+        'xlabel': {
+            'text': 'Wavelength',
+            'symbol': '\\lambda',
+            'units': '\\nm'
+        },
+        'ylabel': {
+            'text': 'Photon Flux',
+            'symbol': '\\phi',
+            'units': '\\arb'
+        }
+    }
+    if (xhighlight is not None):
+        lbl['xhighlight']['start'] = xhighlight[0]
+        lbl['xhighlight']['end'] = xhighlight[1]
+        if (hltxt is not None):
+            lbl['xhighlight']['lbltxt'] = hltxt
+            lbl['xhighlight']['lblanch'] = [(0.2 *
+                                             (xhighlight[1] - xhighlight[0])
+                                             + xhighlight[0]),
+                                            ypos]
+    return lbl
+
+
+def mkintplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
+              rngs=None, limits=None, ticks=None):
+    if (rngs is not None):
+        (x, data) = range_filter(x, data, rngs)
+    if (autoscale):
+        data = data / np.nanmax(data)
+    if (limits is None or ticks is None):
+        siopt = 'scientific-notation=fixed, fixed-exponent=0'
+        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
+        (ymin, ymax, yjmin, yjmax, ystep, ystepm) = data_ranges(data, 7, 7)
+        limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
+        ticks = {}
+        ticks['xmajor'] = np.linspace(xjmin, xjmax,
+                                      np.round((xjmax - xjmin) / xstep) + 1)
+        ticks['xlabels'] = tosinum(ticks['xmajor'], siopt)
+        if (xstepm is not None):
+            ticks['xminor'] = np.linspace(xmin, xmax,
+                                          np.round((xmax - xmin) / xstepm) + 1)
+        ticks['ymajor'] = np.linspace(yjmin, yjmax,
+                                      np.round((yjmax - yjmin) / ystep) + 1)
+        ticks['ylabels'] = tosinum(ticks['ymajor'], siopt)
+        if (ystepm is not None):
+            ticks['yminor'] = np.linspace(ymin, ymax,
+                                          np.round((ymax - ymin) / ystepm) + 1)
+    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
+    print(ticks['xlabels'])
+    template = texenv.get_template('int_flux_over.tex')
+    f = open(pth+".tex", 'w')
+    f.write(
+        template.render(limits=limits,
+                        ticks=ticks, labels=labels, legend=legend))
+    f.close()
+
+
 def prime_factors(n):
     """Returns all the prime factors of a positive integer"""
     factors = []
