@@ -183,20 +183,21 @@ def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
     f.close()
 
 
-def int_plot_lables(xlabel, xunit, xhighlight=None, hltxt=None, ypos=0.5):
+def int_plot_labels(xlabel, xsymbol, xunit, xhighlight=None, hltxt=None,
+                    ypos=0.5):
     lbl = {
         'xlabel': {
-            'text': 'Wavelength',
-            'symbol': '\\lambda',
-            'units': '\\nm'
+            'text': xlabel,
+            'symbol': xsymbol,
+            'units': xunit
         },
         'ylabel': {
-            'text': 'Photon Flux',
-            'symbol': '\\phi',
+            'text': 'Integrated Photon Flux',
             'units': '\\arb'
         }
     }
     if (xhighlight is not None):
+        lbl['xhighlight'] = {}
         lbl['xhighlight']['start'] = xhighlight[0]
         lbl['xhighlight']['end'] = xhighlight[1]
         if (hltxt is not None):
@@ -213,7 +214,7 @@ def mkintplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
     if (rngs is not None):
         (x, data) = range_filter(x, data, rngs)
     if (autoscale):
-        data = data / np.nanmax(data)
+        data = data / np.nanmax(data, axis=0)
     if (limits is None or ticks is None):
         siopt = 'scientific-notation=fixed, fixed-exponent=0'
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
