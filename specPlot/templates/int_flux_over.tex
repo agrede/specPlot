@@ -131,7 +131,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     ((* for leg in legend *))
 
     \addplot+[->, mark=*, solid, smooth]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
+    table [x index=((( loop.index - 1 ))),y index=((( -1 + loop.index + loop.length ))),col sep=comma]{\dtapth};
 
     \addlegendentry{((( leg )))}
 
@@ -147,7 +147,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     ]
     \addplot+[no marks,highlight=(((labels['xhighlight']['start']))):(((labels['xhighlight']['end'])))]{(((limits['ymax'])))};
     ((* if labels['xhighlight']['lbltxt'] is defined *))
-    \node at (axis cs:((( labels['xhighlight']['lblanch'][0] ))),((( labels['xhighlight']['lblanch'][0] )))) [anchor=south west] {((( labels['xhighlight']['lbltxt'] )))};
+    \node at (axis cs:((( labels['xhighlight']['lblanch'][0] ))),((( labels['xhighlight']['lblanch'][1] )))) [anchor=south west] {((( labels['xhighlight']['lbltxt'] )))};
     ((* endif *))
   \end{axis}
   ((* endif *))
