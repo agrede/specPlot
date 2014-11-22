@@ -96,3 +96,7 @@ def find_times(paths, fmt="%m/%d/%Y %H:%M:%S"):
             dts.extend([datetime.strptime(d, fmt) for d
                         in f.readline()[:-1].split(',')[1:]])
     return dts
+
+
+def time_diff(times):
+    return np.array([(t-times[0]).total_seconds() for t in times])
