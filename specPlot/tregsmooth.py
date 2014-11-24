@@ -1,38 +1,36 @@
 import numpy as np
 from scipy.optimize import minimize
-# from scipy.sparse import identity, diags
-from numpy import identity, diag
+import scipy.sparse as spa
 from scipy.interpolate import interp1d
 
 
 def ddmat(x, d):
     m = x.size
     if (d == 0):
-        D = identity(m)
+        D = spa.identity(m)
     else:
-        dx = x[d:] - x[0:(m - d)]
-        V = diag(1 / dx)
-        D = d * np.dot(V, np.diff(ddmat(x, d - 1), axis=0))
+        dx = x[d:] - x[:-d]
+        V = spa.spdiags(np.divide(1, dx.T), np.array([0]), m-d, m-d)
+        D = d * V * spa.dia_matrix(np.diff(ddmat(x, d-1).todense(), axis=0))
     return D
 
 
 def rgdtsmcore(x, y, d, lam, xh):
+    if hasattr(lam, "__len__"):
+        lam = lam[0]
     N = x.size
     Nh = xh.size
-    idx = interp1d(xh, np.arange(Nh), kind='nearest')
-    M = identity(Nh)[idx(x).astype(int), :]
+    idx = interp1d(xh.A1, np.arange(Nh), kind='nearest')
+    M = spa.dia_matrix(np.identity(Nh)[idx(x.A1).astype(int), :])
     D = ddmat(xh, d)
-    W = identity(N)
-    U = identity(Nh-d)
-    delta = np.trace(np.dot(D.conj().transpose(), D)) / np.power(Nh, (2 + d))
-    A = (np.dot(M.conj().transpose(), np.dot(W, M))
-         + lam/delta * np.dot(D.conj().transpose(), np.dot(U, D)))
-    yh = np.linalg.solve(A,
-                         np.dot(M.conj().transpose(), np.dot(W, y)))
-    H = np.dot(M, np.linalg.solve(A, np.dot(M.conj().transpose(), W)))
-    R = (np.dot(M, yh) - y)
-    v = np.dot(R.conj().transpose(), R) / np.power(N * (1 - np.trace(H) / N),
-                                                   2)
+    W = spa.identity(N)
+    U = spa.identity(Nh-d)
+    delta = (D.H * D).diagonal().sum() / np.power(Nh, (2 + d))
+    A = (M.H * W * M) + lam / delta * (D.H * U * D)
+    yh = np.linalg.solve(A.todense(), M.H * W * y)
+    H = M * np.linalg.solve(A.todense(), (M.H * W).todense())
+    R = (M * yh) - y
+    v = ((R.H * R) / np.power(N * (1 - H.trace()) / N, 2))[0, 0]
     return (yh, v)
 
 
