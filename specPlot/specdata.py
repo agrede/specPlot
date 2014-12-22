@@ -44,7 +44,15 @@ def calibration_error(measpath, refpath, t=1.0):
 
 def measurement(paths, cal, ind, t=1.0):
     cal = np.atleast_2d(cal).transpose()
-    Phi = np.zeros((ind.size, 0), float)
+    (ltmp, tmp, fidx) = cps(paths, t=t)
+    Phi = tmp[ind, :]*cal
+    return (Phi, fidx)
+
+
+def cps(paths, t=1.0):
+    tmp = np.genfromtxt(paths[0], delimiter=",", skip_header=2)
+    lam = tmp[:, 0]
+    cnts = np.zeros((lam.size, 0), float)
     fidx = []
     cidx = 0
     for idx, path in enumerate(paths):
@@ -53,10 +61,10 @@ def measurement(paths, cal, ind, t=1.0):
         else:
             tint = t
         tmp = np.genfromtxt(path, delimiter=",", skip_header=2)
-        Phi = np.hstack((Phi, tmp[ind, 1:]*cal/tint))
-        fidx.append(np.array(range(cidx, Phi.shape[1])))
-        cidx = Phi.shape[1]
-    return (Phi, fidx)
+        cnts = np.hstack((cnts, tmp[:, 1:]/tint))
+        fidx.append(np.array(range(cidx, cnts.shape[1])))
+        cidx = cnts.shape[1]
+    return (lam, cnts, fidx)
 
 
 def find_paths(dpath):
