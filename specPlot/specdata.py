@@ -108,3 +108,37 @@ def find_times(paths, fmt="%m/%d/%Y %H:%M:%S"):
 
 def time_diff(times):
     return np.array([(t-times[0]).total_seconds() for t in times])
+
+
+def read_absorb(paths):
+    DIn = np.genfromtxt(paths[0], delimiter="\t", skip_header=1)
+    DIr = np.genfromtxt(paths[1], delimiter="\t", skip_header=1)
+    lam = DIn[:, 0]*1e-9
+    A = 1-DIn[:, 1]/DIr[:, 1]
+    return (lam, A)
+
+
+def read_absorbs(paths, cuton=580e-9):
+    lam = np.array([])
+    A = np.array([])
+    pcut = None
+    for idx, path in enumerate(paths):
+        (tlam, tA) = read_absorb(path)
+        if (type(cuton) is np.ndarray):
+            tcut = cuton[idx]
+        elif (idx < 1):
+            tcut = cuton
+        else:
+            tcut = None
+        if (pcut is None):
+            k0 = 0
+        else:
+            k0 = np.where(tlam >= pcut)[0][0]
+        if (tcut is None):
+            kN = tlam.size
+        else:
+            kN = np.where(tlam >= tcut)[0][0] - 1
+        lam = np.append(lam, tlam[k0:kN])
+        A = np.append(A, tA[k0:kN])
+        pcut = tcut
+    return (lam, A)
