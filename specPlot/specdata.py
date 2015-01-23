@@ -61,6 +61,7 @@ def cps(paths, t=1.0):
         else:
             tint = t
         tmp = np.genfromtxt(path, delimiter=",", skip_header=2)
+        print((idx, tmp.shape))
         cnts = np.hstack((cnts, tmp[:, 1:]/tint))
         fidx.append(np.array(range(cidx, cnts.shape[1])))
         cidx = cnts.shape[1]
@@ -102,7 +103,7 @@ def find_times(paths, fmt="%m/%d/%Y %H:%M:%S"):
     for path in paths:
         with open(path, 'r') as f:
             dts.extend([datetime.strptime(d, fmt) for d
-                        in f.readline()[:-1].split(',')[1:]])
+                        in f.readline()[:-2].split(',')[1:]])
     return dts
 
 

@@ -68,8 +68,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
         ((* endif *))%
         ((* if labels['xlabel']['units'] is defined *))%
         \(\bm{\left[%
-            ((* if labels['xlabel']['mult'] is defined *))%
-            \times
+            ((* if labels['xlabel']['mult'] is defined *))((* if labels['xlabel']['mult'] is defined *)times
             \protect{\SI{((( labels['xlabel']['mult'] )))}{(((
                 labels['xlabel']['units'] )))}} %
             ((* else *))%

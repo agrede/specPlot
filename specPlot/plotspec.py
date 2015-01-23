@@ -65,10 +65,10 @@ def data_ranges(x, major, minor):
         if (tmp.size > 0):
             ksm = tmp[0]
             stepm = Mm * step_range[ksm]
-            if (xmax < nxmax-stepm):
+            if (xmax <= nxmax-stepm):
                 nxmax = nxmax-step
                 nmxmax = xmax + (stepm - np.mod(xmax, stepm))
-            if (xmin > nxmin+stepm):
+            if (xmin >= nxmin+stepm):
                 nxmin = nxmin + step
                 nmxmin = xmin - np.mod(xmin, stepm)
     return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
@@ -96,9 +96,9 @@ def data_inner_ranges(x, major, minor):
         if (tmp.size > 0):
             ksm = tmp[0]
             stepm = Mm * step_range[ksm]
-            if (xmax > nxmax + stepm):
+            if (xmax >= nxmax + stepm):
                 nmxmax = xmax - np.mod(xmax, stepm)
-            if (xmin < nxmin - stepm):
+            if (xmin <= nxmin - stepm):
                 nmxmin = xmin + (stepm - np.mod(xmin, stepm))
     return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
 
