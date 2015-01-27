@@ -42,11 +42,46 @@ def calibration_error(measpath, refpath, t=1.0):
     return (lam, cor, corh, corl, ind)
 
 
+def img_calibration(Xpath, Mpath, refpath, t=1.0):
+    refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
+    lamdata = np.genfromtxt(Xpath, delimiter=",", skip_header=1)
+    measdata = np.genfromtxt(Mpath, delimiter=",", skip_header=0)
+    ind = np.where((lamdata >= refdata[:, 0].min()) *
+                   (lamdata <= refdata[:, 0].max()))[0]
+    lam = lamdata[ind] * 1e-9
+    ref = interp1d(1e-9 * refdata[:, 0], refdata[:, 1], kind='cubic')
+    cor = (lam * t * ref(lam))/(measdata[:, ind] * codata.h * codata.c)
+    return (lam, cor, ind)
+
+
 def measurement(paths, cal, ind, t=1.0):
     cal = np.atleast_2d(cal).transpose()
     (ltmp, tmp, fidx) = cps(paths, t=t)
     Phi = tmp[ind, :]*cal
     return (Phi, fidx)
+
+
+def img_measure(paths, cal, ind, t=1.0):
+    tmp = img_counts(paths, t=t)
+    Phi = tmp[:, ind, :]*cal
+    return Phi
+
+
+def img_counts(paths, t=1.0):
+    tmp = np.genfromtxt(paths[0], delimiter=",")
+    cnts = np.zeros((tmp.shape[0], tmp.shape[1], paths.size),
+                    float)
+    for idx, path in enumerate(paths):
+        if (type(t) is np.ndarray):
+            tint = t[idx]
+        else:
+            tint = t
+        tmp = np.genfromtxt(path, delimiter=",")/tint
+        if (tmp.shape is cnts[:, :, 0].shape):
+            cnts[:, :, idx] = tmp
+        else:
+            print("Error in : "+path)
+    return cnts
 
 
 def cps(paths, t=1.0):
