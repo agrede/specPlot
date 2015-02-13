@@ -12,9 +12,10 @@ from scipy.interpolate import interp1d
 from glob import glob
 from plotspec import range_filter
 from datetime import datetime
+import re
 
 
-def calibration(measpath, refpath, t=1.0):
+def calibration(measpath, refpath="OOIntensityData.csv", t=1.0):
     refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
     measdata = np.genfromtxt(measpath, delimiter=",", skip_header=2)
     ind = np.where((measdata[:, 0] >= refdata[:, 0].min()) *
@@ -26,7 +27,7 @@ def calibration(measpath, refpath, t=1.0):
     return (lam, cor, ind)
 
 
-def calibration_error(measpath, refpath, t=1.0):
+def calibration_error(measpath, refpath="OOIntensityData.csv", t=1.0):
     refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
     measdata = np.genfromtxt(measpath, delimiter=",", skip_header=2)
     ind = np.where((measdata[:, 0] >= refdata[:, 0].min()) *
@@ -42,7 +43,7 @@ def calibration_error(measpath, refpath, t=1.0):
     return (lam, cor, corh, corl, ind)
 
 
-def img_calibration(Xpath, Mpath, refpath, t=1.0):
+def img_calibration(Xpath, Mpath, refpath="OOIntensityData.csv", t=1.0):
     refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
     lamdata = np.genfromtxt(Xpath, delimiter=",", skip_header=1)
     measdata = np.genfromtxt(Mpath, delimiter=",", skip_header=0)
@@ -180,3 +181,14 @@ def read_absorbs(paths, cuton=580e-9):
         A = np.append(A, tA[k0:kN])
         pcut = tcut
     return (lam, A)
+
+
+def read_log(path, pattern):
+    ptrn = re.compile(pattern)
+    rtn = {}
+    with open(path, 'r') as f:
+        for l in f:
+            m = ptrn.match(l)
+            if m:
+                rtn[m.group(1)] = m.groups()
+    return rtn

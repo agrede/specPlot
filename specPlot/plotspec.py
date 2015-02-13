@@ -37,6 +37,8 @@ texenv.variable_end_string = ')))'
 texenv.comment_start_string = '((='
 texenv.comment_end_string = '=))'
 texenv.filters['escape_tex'] = escape_tex
+texenv.lstrip_blocks = True
+texenv.trim_blocks = True
 
 
 def elam(lam):
@@ -72,6 +74,22 @@ def data_ranges(x, major, minor):
                 nxmin = nxmin + step
                 nmxmin = xmin - np.mod(xmin, stepm)
     return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
+
+
+def data_log_ranges(x):
+    xmax = np.nanmax(x)
+    xmin = np.nanmin(x)
+    lmax = np.ceil((np.log10(xmax)))
+    lmin = np.floor((np.log10(xmin)))
+    pmax = np.power(10, lmax)
+    pmin = np.power(10, lmin)
+    if (xmax/pmax > 0.8):
+        pmax = 2*pmax
+        lmax = lmax+1
+    if (pmin/xmin < 2):
+        pmin = 0.8*pmin
+        lmin = lmin-1
+    return (pmin, pmax, lmin, lmax)
 
 
 def data_inner_ranges(x, major, minor):
@@ -304,6 +322,28 @@ def mkintplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
     f = open(pth+".tex", 'w')
     f.write(
         template.render(limits=limits,
+                        ticks=ticks, labels=labels, legend=legend))
+    f.close()
+
+
+def mkloglogplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
+                 rngs=None, limits=None, ticks=None):
+    if (rngs is not None):
+        (x, data) = range_filter(x, data, rngs)
+    if (autoscale):
+        data = data / np.nanmax(data, axis=0)
+    if (limits is None or ticks is None):
+        (xmin, xmax, lxmin, lxmax) = data_log_ranges(x)
+        (ymin, ymax, lymin, lymax) = data_log_ranges(data)
+        limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
+        ticks = {}
+        ticks['xtickten'] = np.arange(lxmin, lxmax+1)
+        ticks['ytickten'] = np.arange(lymin, lymax+1)
+    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
+    template = texenv.get_template('loglogplot.tex')
+    f = open(pth+".tex", 'w')
+    f.write(
+        template.render(multiplex=(x.shape[1] > 1), limits=limits,
                         ticks=ticks, labels=labels, legend=legend))
     f.close()
 

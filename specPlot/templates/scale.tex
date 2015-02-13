@@ -1,0 +1,36 @@
+\documentclass[tikz]{standalone}
+\usepackage{stix}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{xfrac}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage[use-xspace=true,
+redefine-symbols=false,
+range-units=single,
+inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
+\sisetup{detect-all}
+\DeclareSIUnit\decade{decade}
+\DeclareSIUnit\arb{a.u.}
+% Inserts a scale bar into an image
+% Optional argument 1: the colour of the bar and text
+% Argument 2: an \includegraphics command
+% Argument 3: the real world width of the image
+% Argument 4: the length of the scale bar
+% Argument 5: the units in which the scale bar is measured
+\newcommand{\scalebar}[5][white]{
+ \begin{tikzpicture}
+  \draw (0,0) node[anchor=south west,inner sep=0] (image) { #2 };
+  \begin{scope}[x={(image.south east)},y={(image.north west)}]
+   \fill [#1] (0.05,0.2cm) rectangle (#4/#3+0.05,0.4cm);
+   \draw [#1] (0.05,0.4cm) node[anchor=south west] { \SI{#4}{#5} };
+  \end{scope}
+ \end{tikzpicture}
+}
+\begin{document}
+\scalebar{\includegraphics[width=8cm]{\jobname.jpg}}{((( image_width )))}{((( scale_length )))}{((( scale_units )))}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,154 @@
+% Plot quick method using pgfplots to plot spect
+%
+% Copyright (C) 2014 Alex J. Grede
+% GPL v3, See LICENSE.txt for details
+% This function is part of specPlot
+
+\documentclass[tikz]{standalone}
+\usepackage{stix}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{xfrac}
+\usepackage{bm}
+\usepackage[use-xspace=true,
+redefine-symbols=false,
+range-units=single,
+inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
+\sisetup{detect-all}
+\edef\dtapth{\jobname.csv}
+\DeclareSIUnit\decade{decade}
+\DeclareSIUnit\arb{a.u.}
+
+\pgfplotsset{
+  compat=1.11,
+  width=8.8cm,
+  label style={font=\large},
+  tick label style={font=\normalsize},
+  every axis/.append style={
+    very thick,
+    line cap=rect,
+    tick style={very thick,line cap=rect,black}
+  },
+  every axis plot/.append style={thick}
+}
+
+% Generated using
+% http://tools.medialab.sciences-po.fr/iwanthue/index.php
+% 10 colors, soft (k-Means), H: 0 -- 278, C: 0.52 -- 3, L: 0 -- 1.5
+\definecolor{color0}{HTML}{5C8540}
+\definecolor{color1}{HTML}{7D6BCF}
+\definecolor{color2}{HTML}{BE5F2F}
+\definecolor{color3}{HTML}{66BCBA}
+\definecolor{color4}{HTML}{8AD643}
+\definecolor{color5}{HTML}{44496F}
+\definecolor{color6}{HTML}{D0B648}
+\definecolor{color7}{HTML}{97A1D0}
+\definecolor{color8}{HTML}{454324}
+\definecolor{color9}{HTML}{7ED98F}
+
+\pgfplotscreateplotcyclelist{mycolor}{%
+  color0,color1,color2,color3,color4,color5,color6,color7,color8,color9}
+
+\pgfkeys{%
+  /tikz/on layer/.code={
+    \pgfonlayer{#1}\begingroup
+    \aftergroup\endpgfonlayer
+    \aftergroup\endgroup
+  }
+}
+\pgfplotsset{
+    highlight/.code args={#1:#2}{
+        \fill [every highlight] ({axis cs:#1,0}|-{rel axis cs:0,0}) rectangle ({axis cs:#2,0}|-{rel axis cs:0,1});
+    },
+    /tikz/every highlight/.style={
+        on layer=\pgfkeysvalueof{/pgfplots/highlight layer},
+        black!10
+    },
+    /tikz/highlight style/.style={
+        /tikz/every highlight/.append style=#1
+    },
+    highlight layer/.initial=axis background
+}
+\begin{document}
+\begin{tikzpicture}
+  \begin{loglogaxis}[
+    cycle list name = mycolor,
+    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
+    xtickten = {((( ticks['xtickten']|join(', ') )))},
+    xlabel={\textbf{%
+        ((( labels['xlabel']['text'] )))
+        ((* if labels['xlabel']['symbol'] is defined *))
+        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\)
+        ((* endif *))
+        ((* if labels['xlabel']['units'] is defined *))
+        \(\bm{\left[
+            ((* if labels['xlabel']['mult'] is defined *))
+            \times
+            \protect{\SI{((( labels['xlabel']['mult'] )))}{(((
+                labels['xlabel']['units'] )))}}
+            ((* else *))
+            \protect{\si{((( labels['xlabel']['units'] )))}}
+            ((* endif *))
+          \right]}\)
+        ((* endif *))
+      }},
+    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
+    ytickten = {((( ticks['ytickten']|join(', ') )))},
+    ylabel={\textbf{%
+        ((( labels['ylabel']['text'] )))
+        ((* if labels['ylabel']['symbol'] is defined *))
+        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\)
+        ((* endif *))
+        ((* if labels['ylabel']['units'] is defined *))
+        \(\bm{\left[
+            ((* if labels['ylabel']['mult'] is defined *))
+            \times
+            \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
+                labels['ylabel']['units'] )))}}
+            ((* else *))
+            \protect{\si{((( labels['ylabel']['units'] )))}}
+            ((* endif *))
+          \right]}\)
+        ((* endif *))
+      }},
+    legend style = {%
+      % at={(axis cs:)},
+      % anchor=,
+      font={\footnotesize},
+      cells={anchor=west},
+      draw=none},
+    legend pos = south east
+    ]
+
+    ((* for leg in legend *))
+
+    \addplot+[mark=*, only marks]
+    ((* if multiplex *))
+    table [x index=((( loop.index - 1 ))),y index=((( -1 + loop.index + loop.length ))),col sep=comma]{\dtapth};
+    ((* else *))
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
+    ((* endif *))
+    \addlegendentry{((( leg )))}
+
+    ((* endfor *))
+  \end{loglogaxis}
+  ((* if labels['xhighlight'] is defined *))
+  \begin{loglogaxis}[
+    set layers,
+    hide x axis,
+    hide y axis,
+    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
+    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] )))
+    ]
+    \addplot+[no marks,highlight=(((labels['xhighlight']['start']))):(((labels['xhighlight']['end'])))]{(((limits['ymax'])))};
+    ((* if labels['xhighlight']['lbltxt'] is defined *))
+    \node at (axis cs:((( labels['xhighlight']['lblanch'][0] ))),((( labels['xhighlight']['lblanch'][1] )))) [anchor=south west] {((( labels['xhighlight']['lbltxt'] )))};
+    ((* endif *))
+  \end{loglogaxis}
+  ((* endif *))
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
