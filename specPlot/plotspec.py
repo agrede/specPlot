@@ -73,6 +73,10 @@ def data_ranges(x, major, minor):
             if (xmin >= nxmin+stepm):
                 nxmin = nxmin + step
                 nmxmin = xmin - np.mod(xmin, stepm)
+            if (nmxmin >= nxmin-stepm):
+                nmxmin = nxmin-stepm
+            if (nmxmax <= nxmax+stepm):
+                nmxmax = nxmax+stepm
     return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
 
 
