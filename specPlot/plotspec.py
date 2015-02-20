@@ -183,25 +183,27 @@ def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
         (ymin, ymax, yjmin, yjmax, ystep, ystepm) = data_ranges(data, 7, 7)
         limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
         ticks = {}
-        ticks['xmajor'] = np.linspace(xjmin, xjmax,
-                                      np.round((xjmax - xjmin) / xstep) + 1)
-        ticks['xlabels'] = tosinum(ticks['xmajor'], siopt)
+        ticks['xmajor'] = '%0.2e,%0.2e,...,%0.2e' % (xjmin, xjmin+xstep, xjmax)
+        ticks['xlabels'] = -np.round(np.log10(xstep))
+        if (ticks['xlabels'] < 0):
+            ticks['xlabels'] = 0
         if (xstepm is not None):
-            ticks['xminor'] = np.linspace(xmin, xmax,
-                                          np.round((xmax - xmin) / xstepm) + 1)
-        ticks['x2major'] = elam(np.linspace(x2jmax, x2jmin,
-                                            np.round((x2jmax - x2jmin) / x2step
-                                                     + 1)))*1e9
+            ticks['xminor'] = '%0.2e,%0.2e,...,%0.2e' % (
+                xmin, xmin+xstepm, xmax)
+        ticks['x2major'] = ",".join(elam(
+            np.linspace(x2jmax, x2jmin,
+                        np.round((x2jmax - x2jmin) / x2step + 1)))*1e9)
         ticks['x2labels'] = tosinum(
             np.linspace(x2jmax, x2jmin,
                         np.round((x2jmax - x2jmin) / x2step + 1)), siopt)
         if (x2stepm is not None):
-            ticks['x2minor'] =  elam(np.linspace(x2max, x2min,
-                                                 np.round((x2max - x2min)
-                                                          / x2stepm + 1)))*1e9
-        ticks['ymajor'] = np.linspace(yjmin, yjmax,
-                                      np.round((yjmax - yjmin) / ystep) + 1)
-        ticks['ylabels'] = tosinum(ticks['ymajor'], siopt)
+            ticks['x2minor'] = ",".join(elam(
+                np.linspace(x2max, x2min,
+                            np.round((x2max - x2min) / x2stepm + 1)))*1e9)
+        ticks['ymajor'] = '%0.2e,%0.2e,...,%0.2e' % (xmin, xmin+ystep, ymax)
+        ticks['ylabels'] = -np.round(np.log10(ystep))
+        if (ticks['ylabels'] < 0):
+            ticks['ylabels'] = 0
         if (ystepm is not None):
             ticks['yminor'] = np.linspace(ymin, ymax,
                                           np.round((ymax - ymin) / ystepm) + 1)

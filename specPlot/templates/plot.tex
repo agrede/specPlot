@@ -56,10 +56,27 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     axis x line*=bottom,
     cycle list name = mycolor,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['xmajor']|join(', ') )))},
+    xtick = {((( ticks['xmajor']|join(',') )))},
+    ((* if len(ticks['xlabels']) > 1 *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
+    % x tick label style={
+    %   /pgf/number format/.cd,
+    %   fixed,
+    %   fixed zerofill,
+    %   precision=1,
+    %   /tikz/.cd
+    % },%
+    ((* else *))
+    x tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['xlabels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
     ((* if ticks['xminor'] is defined *))%
-    minor xtick={((( ticks['xminor']|join(', ') )))},%
+    minor xtick={((( ticks['xminor'] )))},%
     ((* endif *))%
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] ))) %
@@ -78,6 +95,10 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
           \right]}\)%
         ((* endif *))%
       }},
+    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
+    ytick = {((( ticks['ymajor'] )))},
+    ((* if len(ticks['ylabels']) > 1 *))
+    yticklabels = {((( ticks['ylabels']|join(', ') )))},%
     % y tick label style={
     %   /pgf/number format/.cd,
     %   fixed,
@@ -85,11 +106,17 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     %   precision=1,
     %   /tikz/.cd
     % },%
-    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
-    ytick = {((( ticks['ymajor']|join(', ') )))},
-    yticklabels = {((( ticks['ylabels']|join(', ') )))},%
+    ((* else *))
+    y tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['ylabels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
     ((* if ticks['yminor'] is defined *))%
-    minor ytick={((( ticks['yminor']|join(', ') )))},%
+    minor ytick={((( ticks['yminor'] )))},%
     ((* endif *))%
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] ))) %
@@ -130,11 +157,28 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     scale only axis,
     axis x line*=top,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['x2major']|join(', ') )))},%
+    xtick = {((( ticks['x2major'] )))},%
     ((* if ticks['x2minor'] is defined *))%
-    minor xtick={((( ticks['x2minor']|join(', ') )))},%
+    minor xtick={((( ticks['x2minor'] )))},%
     ((* endif *))%
-    xticklabels = {((( ticks['x2labels']|join(', ') )))},
+    ((* if len(ticks['x2labels']) > 1 *))
+    xticklabels = {((( ticks['x2labels']|join(', ') )))},%
+    % x tick label style={
+    %   /pgf/number format/.cd,
+    %   fixed,
+    %   fixed zerofill,
+    %   precision=1,
+    %   /tikz/.cd
+    % },%
+    ((* else *))
+    x tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['x2labels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
     xlabel={\textbf{%
         ((( labels['x2label']['text'] ))) %
         ((* if labels['x2label']['symbol'] is defined *))%
