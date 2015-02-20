@@ -1,7 +1,7 @@
 """
 Spectrometer Data Plotter
 
-Copyright (C) 2014 Alex J. Grede
+Copyright (C) 2014--2015 Alex J. Grede
 GPL v3, See LICENSE.txt for details
 This module is part of specPlot
 """
