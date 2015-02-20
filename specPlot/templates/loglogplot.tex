@@ -74,7 +74,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
   \begin{loglogaxis}[
     cycle list name = mycolor,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtickten = {((( ticks['xtickten']|join(', ') )))},
+    xtickten = {((( ticks['xtickten'] )))},
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] )))
         ((* if labels['xlabel']['symbol'] is defined *))
@@ -93,7 +93,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
         ((* endif *))
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
-    ytickten = {((( ticks['ytickten']|join(', ') )))},
+    ytickten = {((( ticks['ytickten'] )))},
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] )))
         ((* if labels['ylabel']['symbol'] is defined *))

@@ -168,47 +168,70 @@ def default_labels_temp():
     return tmp
 
 
-def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
-           rngs=None, limits=None, ticks=None):
+def mkplot_axis(prefix, x, rtype='outer', major=7, minor=7):
+    if (rtype is 'outer'):
+        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
+    else:
+        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
+    ticks = {prefix+'major': '%0.2e,%0.2e,...,%0.2e' % (
+        xjmin, xjmin+xstep, xjmax)}
+    limits = {prefix+'min': xmin, prefix+'max': xmax}
+    if (xstepm is not None):
+        ticks[prefix+'minor'] = '%0.2e,%0.2e,...,%0.2e' % (
+            xmin, xmin+xstepm, xmax)
+    ticks[prefix+'labels'] = -np.round(np.log10(xstep))
+    if (ticks[prefix+'labels'] < 0):
+        ticks[prefix+'labels'] = 0
+    return (ticks, limits)
+
+
+def mkplot_special_axis(prefix, x, fun, rtype='inner', major=7, minor=7,
+                        siopt='scientific-notation=fixed, fixed-exponent=0'):
+    if (rtype is 'outer'):
+        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
+    else:
+        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
+    ticks = {}
+    ticks[prefix+'major'] = ",".join(fun(
+        np.linspace(xjmax, xjmin,
+                    np.round((xjmax - xjmin) / xstep + 1))))
+    ticks[prefix+'labels'] = tosinum(
+        np.linspace(xjmax, xjmin,
+                    np.round((xjmax - xjmin) / xstep + 1)), siopt)
+    if (xstepm is not None):
+        ticks[prefix+'minor'] = ",".join(fun(
+            np.linspace(xmax, xmin,
+                        np.round((xmax - xmin) / xstepm + 1))))
+    limits = {prefix+'min': xmin, prefix+'max': xmax}
+    return (ticks, limits)
+
+
+def mkplot_gen(lam, data, autoscale, rngs, limits, ticks):
     if (rngs is not None):
         (lam, data) = range_filter(lam, data, rngs)
     if (autoscale):
         data = data / np.nanmax(data)
     if (limits is None or ticks is None):
-        siopt = 'scientific-notation=fixed, fixed-exponent=0'
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(lam * 1e9,
-                                                                7, 7)
-        (x2min, x2max, x2jmin, x2jmax, x2step, x2stepm) = data_inner_ranges(
-            elam(np.array([xmin, xmax])*1e-9), 7, 7)
-        (ymin, ymax, yjmin, yjmax, ystep, ystepm) = data_ranges(data, 7, 7)
-        limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
+        limits = {}
         ticks = {}
-        ticks['xmajor'] = '%0.2e,%0.2e,...,%0.2e' % (xjmin, xjmin+xstep, xjmax)
-        ticks['xlabels'] = -np.round(np.log10(xstep))
-        if (ticks['xlabels'] < 0):
-            ticks['xlabels'] = 0
-        if (xstepm is not None):
-            ticks['xminor'] = '%0.2e,%0.2e,...,%0.2e' % (
-                xmin, xmin+xstepm, xmax)
-        ticks['x2major'] = ",".join(elam(
-            np.linspace(x2jmax, x2jmin,
-                        np.round((x2jmax - x2jmin) / x2step + 1)))*1e9)
-        ticks['x2labels'] = tosinum(
-            np.linspace(x2jmax, x2jmin,
-                        np.round((x2jmax - x2jmin) / x2step + 1)), siopt)
-        if (x2stepm is not None):
-            ticks['x2minor'] = ",".join(elam(
-                np.linspace(x2max, x2min,
-                            np.round((x2max - x2min) / x2stepm + 1)))*1e9)
-        ticks['ymajor'] = '%0.2e,%0.2e,...,%0.2e' % (xmin, xmin+ystep, ymax)
-        ticks['ylabels'] = -np.round(np.log10(ystep))
-        if (ticks['ylabels'] < 0):
-            ticks['ylabels'] = 0
-        if (ystepm is not None):
-            ticks['yminor'] = np.linspace(ymin, ymax,
-                                          np.round((ymax - ymin) / ystepm) + 1)
+        (t_ticks, t_limits) = mkplot_axis('x', lam*1e9)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+        (t_ticks, t_limits) = mkplot_axis(
+            'x2',
+            elam(np.array([limits['xmin'], limits['xmax']])),
+            lambda x: elam(x)*1e9)
+        ticks.update(t_ticks)
+        (t_ticks, t_limits) = mkplot_axis('y', data)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+    return (limits, ticks)
+
+
+def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
+           rngs=None, limits=None, ticks=None):
+    (limits, ticks) = mkplot_gen(lam, data, autoscale, rngs, limits, ticks)
     np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
-    print(ticks['xlabels'])
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -219,51 +242,10 @@ def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
 
 def mkzplot(pth, lam, data, zs, autoscale=True, labels=default_labels_temp(),
             rngs=None, limits=None, ticks=None):
-    if (rngs is not None):
-        (lam, data) = range_filter(lam, data, rngs)
-    if (autoscale):
-        data = data / np.nanmax(data)
-    if (limits is None or ticks is None):
-        siopt = 'scientific-notation=fixed, fixed-exponent=0'
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(lam * 1e9,
-                                                                7, 7)
-        (x2min, x2max, x2jmin, x2jmax, x2step, x2stepm) = data_inner_ranges(
-            elam(np.array([xmin, xmax])*1e-9), 7, 7)
-        (ymin, ymax, yjmin, yjmax, ystep, ystepm) = data_ranges(data, 7, 7)
-        (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
-        limits = {
-            'xmin': xmin,
-            'xmax': xmax,
-            'ymin': ymin,
-            'ymax': ymax,
-            'zmin': zmin,
-            'zmax': zmax
-        }
-        ticks = {}
-        ticks['xmajor'] = np.linspace(xjmin, xjmax,
-                                      np.round((xjmax - xjmin) / xstep) + 1)
-        ticks['xlabels'] = tosinum(ticks['xmajor'], siopt)
-        if (xstepm is not None):
-            ticks['xminor'] = np.linspace(xmin, xmax,
-                                          np.round((xmax - xmin) / xstepm) + 1)
-        ticks['x2major'] = elam(np.linspace(x2jmax, x2jmin,
-                                            np.round((x2jmax - x2jmin) / x2step
-                                                     + 1)))*1e9
-        ticks['x2labels'] = tosinum(
-            np.linspace(x2jmax, x2jmin,
-                        np.round((x2jmax - x2jmin) / x2step + 1)), siopt)
-        if (x2stepm is not None):
-            ticks['x2minor'] =  elam(np.linspace(x2max, x2min,
-                                                 np.round((x2max - x2min)
-                                                          / x2stepm + 1)))*1e9
-        ticks['ymajor'] = np.linspace(yjmin, yjmax,
-                                      np.round((yjmax - yjmin) / ystep) + 1)
-        ticks['ylabels'] = tosinum(ticks['ymajor'], siopt)
-        if (ystepm is not None):
-            ticks['yminor'] = np.linspace(ymin, ymax,
-                                          np.round((ymax - ymin) / ystepm) + 1)
-    np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
-    print(ticks['xlabels'])
+    (limits, ticks) = mkplot_gen(lam, data, autoscale, rngs, limits, ticks)
+    (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
+    limits['zmin'] = zmin
+    limits['zmax'] = zmax
     template = texenv.get_template('temp.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -303,27 +285,17 @@ def mkintplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
     if (rngs is not None):
         (x, data) = range_filter(x, data, rngs)
     if (autoscale):
-        data = data / np.nanmax(data, axis=0)
+        data = data / np.nanmax(data)
     if (limits is None or ticks is None):
-        siopt = 'scientific-notation=fixed, fixed-exponent=0'
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
-        (ymin, ymax, yjmin, yjmax, ystep, ystepm) = data_ranges(data, 7, 7)
-        limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
+        limits = {}
         ticks = {}
-        ticks['xmajor'] = np.linspace(xjmin, xjmax,
-                                      np.round((xjmax - xjmin) / xstep) + 1)
-        ticks['xlabels'] = tosinum(ticks['xmajor'], siopt)
-        if (xstepm is not None):
-            ticks['xminor'] = np.linspace(xmin, xmax,
-                                          np.round((xmax - xmin) / xstepm) + 1)
-        ticks['ymajor'] = np.linspace(yjmin, yjmax,
-                                      np.round((yjmax - yjmin) / ystep) + 1)
-        ticks['ylabels'] = tosinum(ticks['ymajor'], siopt)
-        if (ystepm is not None):
-            ticks['yminor'] = np.linspace(ymin, ymax,
-                                          np.round((ymax - ymin) / ystepm) + 1)
+        (t_ticks, t_limits) = mkplot_axis('x', x)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+        (t_ticks, t_limits) = mkplot_axis('y', data)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
     np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
-    print(ticks['xlabels'])
     template = texenv.get_template('int_flux_over.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -343,8 +315,8 @@ def mkloglogplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
         (ymin, ymax, lymin, lymax) = data_log_ranges(data)
         limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
         ticks = {}
-        ticks['xtickten'] = np.arange(lxmin, lxmax+1)
-        ticks['ytickten'] = np.arange(lymin, lymax+1)
+        ticks['xtickten'] = '%i,%i,...,%i' % (lxmin, lxmin+1, lxmax+1)
+        ticks['ytickten'] = '%i,%i,...,%i' % (lymin, lymin+1, lymax+1)
     np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
     template = texenv.get_template('loglogplot.tex')
     f = open(pth+".tex", 'w')

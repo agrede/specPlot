@@ -56,7 +56,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     axis x line*=bottom,
     cycle list name = mycolor,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['xmajor']|join(',') )))},
+    xtick = {((( ticks['xmajor'] )))},
     ((* if len(ticks['xlabels']) > 1 *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
     % x tick label style={
