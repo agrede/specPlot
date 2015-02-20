@@ -97,7 +97,7 @@ def cps(paths, t=1.0):
         else:
             tint = t
         tmp = np.genfromtxt(path, delimiter=",", skip_header=2)
-        if (cnts.shape[0] == cnts.shape[0]):
+        if (cnts.shape[0] == tmp.shape[0]):
             cnts = np.hstack((cnts, tmp[:, 1:]/tint))
             fidx.append(np.array(range(cidx, cnts.shape[1])))
             cidx = cnts.shape[1]
