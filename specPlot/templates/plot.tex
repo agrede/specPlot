@@ -57,7 +57,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     cycle list name = mycolor,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
     xtick = {((( ticks['xmajor'] )))},
-    ((* if len(ticks['xlabels']) > 1 *))
+    ((* if ticks['xlabels'] is iterable *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
     % x tick label style={
     %   /pgf/number format/.cd,
@@ -71,7 +71,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       /pgf/number format/.cd,
       fixed,
       fixed zerofill,
-      precision=((( ticks['xlabels'] ))),
+      precision=((( ticks['xlabels']|int ))),
       /tikz/.cd
     },%
     ((* endif *))
@@ -97,7 +97,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     ytick = {((( ticks['ymajor'] )))},
-    ((* if len(ticks['ylabels']) > 1 *))
+    ((* if ticks['ylabels'] is iterable *))
     yticklabels = {((( ticks['ylabels']|join(', ') )))},%
     % y tick label style={
     %   /pgf/number format/.cd,
@@ -111,7 +111,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       /pgf/number format/.cd,
       fixed,
       fixed zerofill,
-      precision=((( ticks['ylabels'] ))),
+      precision=((( ticks['ylabels']|int ))),
       /tikz/.cd
     },%
     ((* endif *))
@@ -161,7 +161,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     ((* if ticks['x2minor'] is defined *))%
     minor xtick={((( ticks['x2minor'] )))},%
     ((* endif *))%
-    ((* if len(ticks['x2labels']) > 1 *))
+    ((* if ticks['x2labels'] is iterable *))
     xticklabels = {((( ticks['x2labels']|join(', ') )))},%
     % x tick label style={
     %   /pgf/number format/.cd,
@@ -175,7 +175,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       /pgf/number format/.cd,
       fixed,
       fixed zerofill,
-      precision=((( ticks['x2labels'] ))),
+      precision=((( ticks['x2labels']|int ))),
       /tikz/.cd
     },%
     ((* endif *))

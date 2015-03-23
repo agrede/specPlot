@@ -74,10 +74,27 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
   \begin{axis}[
     cycle list name = mycolor,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['xmajor']|join(', ') )))},
+    xtick = {((( ticks['xmajor'] )))},
+    ((* if ticks['xlabels'] is iterable *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
+    % x tick label style={
+    %   /pgf/number format/.cd,
+    %   fixed,
+    %   fixed zerofill,
+    %   precision=1,
+    %   /tikz/.cd
+    % },%
+    ((* else *))
+    x tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['xlabels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
     ((* if ticks['xminor'] is defined *))%
-    minor xtick={((( ticks['xminor']|join(', ') )))},%
+    minor xtick={((( ticks['xminor'] )))},%
     ((* endif *))%
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] ))) %
@@ -97,28 +114,28 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
         ((* endif *))%
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
-    ytick = {((( ticks['ymajor']|join(', ') )))},
+    ytick = {((( ticks['ymajor'] )))},
+    ((* if ticks['ylabels'] is iterable *))
     yticklabels = {((( ticks['ylabels']|join(', ') )))},%
+    % y tick label style={
+    %   /pgf/number format/.cd,
+    %   fixed,
+    %   fixed zerofill,
+    %   precision=1,
+    %   /tikz/.cd
+    % },%
+    ((* else *))
+    y tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['ylabels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
     ((* if ticks['yminor'] is defined *))%
-    minor ytick={((( ticks['yminor']|join(', ') )))},%
+    minor ytick={((( ticks['yminor'] )))},%
     ((* endif *))%
-    ylabel={\textbf{%
-        ((( labels['ylabel']['text'] ))) %
-        ((* if labels['ylabel']['symbol'] is defined *))%
-        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\) %
-        ((* endif *))%
-        ((* if labels['ylabel']['units'] is defined *))%
-        \(\bm{\left[%
-            ((* if labels['ylabel']['mult'] is defined *))%
-            \times
-            \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
-                labels['ylabel']['units'] )))}} %
-            ((* else *))%
-            \protect{\si{((( labels['ylabel']['units'] )))}}%
-            ((* endif *))%
-          \right]}\)%
-        ((* endif *))%
-      }},
     legend style = {%
       % at={(axis cs:)},
       % anchor=,

@@ -83,8 +83,12 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       height=0.04*\pgfkeysvalueof{/pgfplots/parent axis height},
     },
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
+    ((* if (ticks['xmajor']) is iterable and ticks['xmajor'] is not string *))
     xtick = {((( ticks['xmajor']|join(', ') )))},
-    ((* if len(ticks['xlabels']) > 1 *))
+    ((* else *))
+    xtick = {((( ticks['xmajor'] )))},
+    ((* endif *))
+    ((* if (ticks['xlabels']) is iterable and ticks['xlabels'] is not string *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
     % x tick label style={
     %   /pgf/number format/.cd,
@@ -103,7 +107,11 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     },%
     ((* endif *))
     ((* if ticks['xminor'] is defined *))%
-    minor xtick={((( ticks['xminor']|join(', ') )))},%
+    ((* if (ticks['xminor']) is iterable and ticks['xminor'] is not string *))
+    minor xtick = {((( ticks['xminor']|join(', ') )))},
+    ((* else *))
+    minor xtick = {((( ticks['xminor'] )))},
+    ((* endif *))
     ((* endif *))%
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] ))) %
@@ -123,8 +131,12 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
         ((* endif *))%
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
+    ((* if (ticks['ymajor']) is iterable and ticks['ymajor'] is not string *))
+    ytick = {((( ticks['ymajor']|join(', ') )))},
+    ((* else *))
     ytick = {((( ticks['ymajor'] )))},
-    ((* if len(ticks['ylabels']) > 1 *))
+    ((* endif *))
+    ((* if ticks['ylabels'] is iterable and ticks['ylabels'] is not string *))
     yticklabels = {((( ticks['ylabels']|join(', ') )))},%
     % y tick label style={
     %   /pgf/number format/.cd,
@@ -143,7 +155,11 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     },%
     ((* endif *))
     ((* if ticks['yminor'] is defined *))%
-    minor ytick={((( ticks['yminor'] )))},%
+    ((* if (ticks['yminor']) is iterable and ticks['yminor'] is not string*))
+    minor ytick = {((( ticks['yminor']|join(', ') )))},
+    ((* else *))
+    minor ytick = {((( ticks['yminor'] )))},
+    ((* endif *))
     ((* endif *))%
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] ))) %
@@ -186,7 +202,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     ((* if ticks['x2minor'] is defined *))%
     minor xtick={((( ticks['x2minor'] )))},%
     ((* endif *))%
-    ((* if len(ticks['x2labels']) > 1 *))
+    ((* if (ticks['x2labels'])  is iterable and ticks['x2labels'] is not string *))
     xticklabels = {((( ticks['x2labels']|join(', ') )))},%
     % x tick label style={
     %   /pgf/number format/.cd,

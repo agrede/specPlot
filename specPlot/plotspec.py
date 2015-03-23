@@ -133,8 +133,8 @@ def range_filter(x, y, rngs):
     kx = np.where((x >= rngs['x'][0]) * (x <= rngs['x'][1]))[0]
     x = np.atleast_2d(x[kx]).transpose()
     y = y[kx, :]
-    ky = np.where(((y < rngs['y'][0]) + (y > rngs['y'][1])) > 0)[0]
-    y[ky] = np.nan
+    kx, ky = np.where(((y < rngs['y'][0]) + (y > rngs['y'][1])) > 0)
+    y[kx, ky] = np.nan
     return (x, y)
 
 
@@ -152,8 +152,28 @@ def default_labels():
         },
         'x2label': {
             'text': 'Photon Energy',
-            'symbol': 'E_{\\lambda}',
+            'symbol': 'h \\nu',
             'units': '\\eV'
+        }
+    }
+
+
+def default_Elabels():
+    return {
+        'xlabel': {
+            'text': 'Photon Energy',
+            'symbol': 'h \\nu',
+            'units': '\\eV'
+        },
+        'ylabel': {
+            'text': 'Photon Flux',
+            'symbol': '\\phi',
+            'units': '\\arb'
+        },
+        'x2label': {
+            'text': 'Wavelength',
+            'symbol': '\\lambda',
+            'units': '\\nm'
         }
     }
 
@@ -173,11 +193,11 @@ def mkplot_axis(prefix, x, rtype='outer', major=7, minor=7):
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
     else:
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
-    ticks = {prefix+'major': '%0.2e,%0.2e,...,%0.2e' % (
+    ticks = {prefix+'major': '%f,%f,...,%f' % (
         xjmin, xjmin+xstep, xjmax)}
     limits = {prefix+'min': xmin, prefix+'max': xmax}
     if (xstepm is not None):
-        ticks[prefix+'minor'] = '%0.2e,%0.2e,...,%0.2e' % (
+        ticks[prefix+'minor'] = '%f,%f,...,%f' % (
             xmin, xmin+xstepm, xmax)
     ticks[prefix+'labels'] = -np.round(np.log10(xstep))
     if (ticks[prefix+'labels'] < 0):
@@ -192,16 +212,16 @@ def mkplot_special_axis(prefix, x, fun, rtype='inner', major=7, minor=7,
     else:
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
     ticks = {}
-    ticks[prefix+'major'] = ",".join(fun(
-        np.linspace(xjmax, xjmin,
-                    np.round((xjmax - xjmin) / xstep + 1))))
+    ticks[prefix+'major'] = ",".join(
+        ["%f" % fun(y) for y in np.linspace(
+            xjmax, xjmin, np.round((xjmax - xjmin) / xstep + 1))])
     ticks[prefix+'labels'] = tosinum(
         np.linspace(xjmax, xjmin,
                     np.round((xjmax - xjmin) / xstep + 1)), siopt)
     if (xstepm is not None):
-        ticks[prefix+'minor'] = ",".join(fun(
-            np.linspace(xmax, xmin,
-                        np.round((xmax - xmin) / xstepm + 1))))
+        ticks[prefix+'minor'] = ",".join(
+            ["%f" % fun(y) for y in np.linspace(
+                xmax, xmin, np.round((xmax - xmin) / xstepm + 1))])
     limits = {prefix+'min': xmin, prefix+'max': xmax}
     return (ticks, limits)
 
@@ -217,21 +237,57 @@ def mkplot_gen(lam, data, autoscale, rngs, limits, ticks):
         (t_ticks, t_limits) = mkplot_axis('x', lam*1e9)
         ticks.update(t_ticks)
         limits.update(t_limits)
-        (t_ticks, t_limits) = mkplot_axis(
+        (t_ticks, t_limits) = mkplot_special_axis(
             'x2',
-            elam(np.array([limits['xmin'], limits['xmax']])),
+            elam(np.array([limits['xmin'], limits['xmax']])*1e-9),
             lambda x: elam(x)*1e9)
         ticks.update(t_ticks)
         (t_ticks, t_limits) = mkplot_axis('y', data)
         ticks.update(t_ticks)
         limits.update(t_limits)
-    return (limits, ticks)
+    return (limits, ticks, lam, data)
+
+
+def mkplot_genE(E, data, autoscale, rngs, limits, ticks):
+    if (rngs is not None):
+        (E, data) = range_filter(E, data, rngs)
+    if (autoscale):
+        data = data / np.nanmax(data)
+    if (limits is None or ticks is None):
+        limits = {}
+        ticks = {}
+        (t_ticks, t_limits) = mkplot_axis('x', E)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+        (t_ticks, t_limits) = mkplot_special_axis(
+            'x2',
+            elam(np.array([limits['xmin'], limits['xmax']]))*1e9,
+            lambda x: elam(x)*1e9)
+        ticks.update(t_ticks)
+        (t_ticks, t_limits) = mkplot_axis('y', data)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+    return (limits, ticks, E, data)
 
 
 def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
            rngs=None, limits=None, ticks=None):
-    (limits, ticks) = mkplot_gen(lam, data, autoscale, rngs, limits, ticks)
+    (limits, ticks, lam, data) = mkplot_gen(
+        lam, data, autoscale, rngs, limits, ticks)
     np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
+    template = texenv.get_template('plot.tex')
+    f = open(pth+".tex", 'w')
+    f.write(
+        template.render(limits=limits,
+                        ticks=ticks, labels=labels, legend=legend))
+    f.close()
+
+
+def mkEplot(pth, E, data, legend, autoscale=True, labels=default_Elabels(),
+            rngs=None, limits=None, ticks=None):
+    (limits, ticks, E, data) = mkplot_genE(
+        E, data, autoscale, rngs, limits, ticks)
+    np.savetxt(pth+".csv", np.hstack((E, data)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -242,10 +298,12 @@ def mkplot(pth, lam, data, legend, autoscale=True, labels=default_labels(),
 
 def mkzplot(pth, lam, data, zs, autoscale=True, labels=default_labels_temp(),
             rngs=None, limits=None, ticks=None):
-    (limits, ticks) = mkplot_gen(lam, data, autoscale, rngs, limits, ticks)
+    (limits, ticks, lam, data) = mkplot_gen(
+        lam, data, autoscale, rngs, limits, ticks)
     (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
     limits['zmin'] = zmin
     limits['zmax'] = zmax
+    np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
     template = texenv.get_template('temp.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -316,6 +374,7 @@ def mkloglogplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
         limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
         ticks = {}
         ticks['xtickten'] = '%i,%i,...,%i' % (lxmin, lxmin+1, lxmax+1)
+        print((lymin, lymin+1, lymax+1))
         ticks['ytickten'] = '%i,%i,...,%i' % (lymin, lymin+1, lymax+1)
     np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
     template = texenv.get_template('loglogplot.tex')
