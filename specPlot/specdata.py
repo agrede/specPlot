@@ -192,3 +192,13 @@ def read_log(path, pattern):
             if m:
                 rtn[m.group(1)] = m.groups()
     return rtn
+
+
+def read_scope(paths):
+    v = []
+    t = np.zeros((1000, len(paths)))
+    for k, pth in enumerate(paths):
+        tmp = np.genfromtxt(pth, delimiter=",", skip_header=2)
+        t[:, k] = tmp[:, 0]
+        v.append(tmp[:, 1:])
+    return (t, v)
