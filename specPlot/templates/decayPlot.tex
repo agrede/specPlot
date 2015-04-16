@@ -1,0 +1,177 @@
+% Plot quick method using pgfplots to plot spect
+%
+% Copyright (C) 2014-2015 Alex J. Grede
+% GPL v3, See LICENSE.txt for details
+% This function is part of specPlot
+
+\documentclass[tikz]{standalone}
+\usepackage{stix}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{xfrac}
+\usepackage{bm}
+\usepackage[use-xspace=true,
+redefine-symbols=false,
+range-units=single]{siunitx}
+\sisetup{detect-all}
+\edef\dtapth{\jobname.csv}
+\DeclareSIUnit\decade{decade}
+\DeclareSIUnit\arb{a.u.}
+
+\pgfplotsset{
+  compat=1.11,
+  width=8.8cm,
+  label style={font=\large},
+  tick label style={font=\normalsize},
+  every axis/.append style={
+    very thick,
+    line cap=rect,
+    tick style={very thick,line cap=rect,black}
+  },
+  every axis plot/.append style={thick}
+}
+
+% Generated using
+% http://tools.medialab.sciences-po.fr/iwanthue/index.php
+% 10 colors, soft (k-Means), H: 0 -- 278, C: 0.52 -- 3, L: 0 -- 1.5
+\definecolor{color0}{HTML}{5C8540}
+\definecolor{color1}{HTML}{7D6BCF}
+\definecolor{color2}{HTML}{BE5F2F}
+\definecolor{color3}{HTML}{66BCBA}
+\definecolor{color4}{HTML}{8AD643}
+\definecolor{color5}{HTML}{44496F}
+\definecolor{color6}{HTML}{D0B648}
+\definecolor{color7}{HTML}{97A1D0}
+\definecolor{color8}{HTML}{454324}
+\definecolor{color9}{HTML}{7ED98F}
+
+\pgfplotscreateplotcyclelist{mycolor}{%
+  color0,color1,color2,color3,color4,color5,color6,color7,color8,color9}
+
+\begin{document}
+\begin{tikzpicture}
+  \begin{semilogyaxis}[
+    scale only axis,
+    colormap/bluered,
+    point meta min=((( limits['zmin'] ))),
+    point meta max=((( limits['zmax'] ))),
+    colorbar horizontal,
+    colorbar style={
+      xlabel={\textbf{%
+        ((( labels['zlabel']['text'] ))) %
+        ((* if labels['zlabel']['symbol'] is defined *))
+        \(\bm{\left( ((( labels['zlabel']['symbol'] ))) \right)}\) %
+        ((* endif *))
+        ((* if labels['zlabel']['units'] is defined *))
+        \(\bm{\left[%
+            ((* if labels['zlabel']['mult'] is defined *))
+            \times
+            \protect{\SI{((( labels['zlabel']['mult'] )))}{(((
+                labels['zlabel']['units'] )))}} %
+            ((* else *))
+            \protect{\si{((( labels['zlabel']['units'] )))}}%
+            ((* endif *))
+          \right]}\)%
+        ((* endif *))
+      }},
+      label style={font=\footnotesize},
+      tick label style={font=\footnotesize},
+      at={(0.95455,0.96)},anchor=north east,
+      width=0.45*\pgfkeysvalueof{/pgfplots/parent axis width},
+      height=0.04*\pgfkeysvalueof{/pgfplots/parent axis height},
+    },
+    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
+    ((* if (ticks['xmajor']) is iterable and ticks['xmajor'] is not string *))
+    xtick = {((( ticks['xmajor']|join(', ') )))},
+    ((* else *))
+    xtick = {((( ticks['xmajor'] )))},
+    ((* endif *))
+    ((* if (ticks['xlabels']) is iterable and ticks['xlabels'] is not string *))
+    xticklabels = {((( ticks['xlabels']|join(', ') )))},%
+    % x tick label style={
+    %   /pgf/number format/.cd,
+    %   fixed,
+    %   fixed zerofill,
+    %   precision=1,
+    %   /tikz/.cd
+    % },%
+    ((* else *))
+    x tick label style={
+      /pgf/number format/.cd,
+      fixed,
+      fixed zerofill,
+      precision=((( ticks['xlabels'] ))),
+      /tikz/.cd
+    },%
+    ((* endif *))
+    ((* if ticks['xminor'] is defined *))
+    ((* if (ticks['xminor']) is iterable and ticks['xminor'] is not string *))
+    minor xtick = {((( ticks['xminor']|join(', ') )))},
+    ((* else *))
+    minor xtick = {((( ticks['xminor'] )))},
+    ((* endif *))
+    ((* endif *))
+    xlabel={\textbf{%
+        ((( labels['xlabel']['text'] ))) %
+        ((* if labels['xlabel']['symbol'] is defined *))%
+        \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\) %
+        ((* endif *))%
+        ((* if labels['xlabel']['units'] is defined *))%
+        \(\bm{\left[%
+            ((* if labels['xlabel']['mult'] is defined *))%
+            \times
+            \protect{\SI{((( labels['xlabel']['mult'] )))}{(((
+                labels['xlabel']['units'] )))}} %
+            ((* else *))%
+            \protect{\si{((( labels['xlabel']['units'] )))}}%
+            ((* endif *))%
+          \right]}\)%
+        ((* endif *))%
+      }},
+    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
+    ytickten = {((( ticks['ytickten'] )))},
+    ylabel={\textbf{%
+        ((( labels['ylabel']['text'] ))) %
+        ((* if labels['ylabel']['symbol'] is defined *))%
+        \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\) %
+        ((* endif *))%
+        ((* if labels['ylabel']['units'] is defined *))%
+        \(\bm{\left[%
+            ((* if labels['ylabel']['mult'] is defined *))%
+            \times
+            \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
+                labels['ylabel']['units'] )))}} %
+            ((* else *))%
+            \protect{\si{((( labels['ylabel']['units'] )))}}%
+            ((* endif *))%
+          \right]}\)%
+        ((* endif *))%
+      }},
+    legend style = {%
+      % at={(axis cs:)},
+      % anchor=,
+      font={\footnotesize},
+      cells={anchor=west},
+      draw=none},
+    legend pos = north east
+    ]
+
+    ((* for z in zs *))
+
+    \addplot+[no markers, solid, smooth, mesh, point meta=((( z )))]
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
+
+    ((* if fit is not None *))
+    \addplot+[no markers, dashed, mesh, point meta ((( z
+    )))]{exp( ((( fit['m'][loop.index] ))) * x + ((( fit['b'][loop.index] ))) )}
+    ((* endif *))
+
+    ((* endfor *))
+  \end{semilogyaxis}
+\end{tikzpicture}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
