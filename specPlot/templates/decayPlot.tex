@@ -132,20 +132,20 @@ range-units=single]{siunitx}
     ytickten = {((( ticks['ytickten'] )))},
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] ))) %
-        ((* if labels['ylabel']['symbol'] is defined *))%
+        ((* if labels['ylabel']['symbol'] is defined *))
         \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\) %
-        ((* endif *))%
-        ((* if labels['ylabel']['units'] is defined *))%
+        ((* endif *))
+        ((* if labels['ylabel']['units'] is defined *))
         \(\bm{\left[%
-            ((* if labels['ylabel']['mult'] is defined *))%
+            ((* if labels['ylabel']['mult'] is defined *))
             \times
             \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
                 labels['ylabel']['units'] )))}} %
-            ((* else *))%
+            ((* else *))
             \protect{\si{((( labels['ylabel']['units'] )))}}%
-            ((* endif *))%
+            ((* endif *))
           \right]}\)%
-        ((* endif *))%
+        ((* endif *))
       }},
     legend style = {%
       % at={(axis cs:)},
@@ -157,16 +157,16 @@ range-units=single]{siunitx}
     ]
 
     ((* for z in zs *))
-
     \addplot+[no markers, solid, smooth, mesh, point meta=((( z )))]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
-
-    ((* if fit is not None *))
-    \addplot+[no markers, dashed, mesh, point meta ((( z
-    )))]{exp( ((( fit['m'][loop.index] ))) * x + ((( fit['b'][loop.index] ))) )}
-    ((* endif *))
-
+    table [x index=((( loop.index - 1 ))),y index=((( -1 + loop.index + loop.length ))),col sep=comma]{\dtapth};
     ((* endfor *))
+
+    ((* if fit is defined *))
+    ((* for z in zs *))
+    \addplot+[no markers, dashed, mesh, domain=((( fit['domain'] ))), point meta=((( z
+    )))]{exp( ((( fit['m'][loop.index-1] ))) * x + ((( fit['b'][loop.index-1] ))) )};
+    ((* endfor *))
+    ((* endif *))
   \end{semilogyaxis}
 \end{tikzpicture}
 \end{document}

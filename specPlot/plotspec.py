@@ -138,6 +138,19 @@ def range_filter(x, y, rngs):
     return (x, y)
 
 
+def range_filter_2d(x, y, rngs):
+    kx1, ky1 = np.where(((x < rngs['x'][0]) + (x > rngs['x'][1])) > 0)
+    kx2, ky2 = np.where(((y < rngs['y'][0]) + (y > rngs['y'][1])) > 0)
+    x[kx1, ky1] = np.nan
+    y[kx1, ky1] = np.nan
+    x[kx2, ky2] = np.nan
+    y[kx2, ky2] = np.nan
+    k = np.where((np.isnan(x).sum(axis=1) < x.shape[1]))[0]
+    x = x[k, :]
+    y = y[k, :]
+    return (x, y)
+
+
 def default_labels():
     return {
         'xlabel': {
@@ -309,6 +322,35 @@ def mkzplot(pth, lam, data, zs, autoscale=True, labels=default_labels_temp(),
     f.write(
         template.render(limits=limits,
                         ticks=ticks, labels=labels, zs=zs))
+    f.close()
+
+
+def mkzdecay(pth, x, data, zs, fit, autoscale=False,
+             labels={'xlabel': {'text': 'x'}, 'ylabel': {'text': 'y'}},
+             rngs=None, limits=None, ticks=None):
+    if (rngs is not None):
+        (x, data) = range_filter_2d(x, data, rngs)
+    if (autoscale):
+        data = data / np.nanmax(data, axis=0)
+    if (limits is None or ticks is None):
+        limits = {}
+        ticks = {}
+        (t_ticks, t_limits) = mkplot_axis('x', x)
+        ticks.update(t_ticks)
+        limits.update(t_limits)
+        (ymin, ymax, lymin, lymax) = data_log_ranges(data)
+        limits.update({'ymin': ymin, 'ymax': ymax})
+        ticks['ytickten'] = '%i,%i,...,%i' % (lymin, lymin+1, lymax+1)
+        (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
+        limits['zmin'] = zmin
+        limits['zmax'] = zmax
+    print((x.shape, data.shape))
+    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
+    template = texenv.get_template('decayPlot.tex')
+    f = open(pth+".tex", 'w')
+    f.write(
+        template.render(multiplex=(x.shape[1] > 1), limits=limits,
+                        ticks=ticks, labels=labels, fit=fit, zs=zs))
     f.close()
 
 
