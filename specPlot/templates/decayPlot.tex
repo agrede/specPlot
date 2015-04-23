@@ -161,7 +161,7 @@ range-units=single]{siunitx}
     table [x index=((( loop.index - 1 ))),y index=((( -1 + loop.index + loop.length ))),col sep=comma]{\dtapth};
     ((* endfor *))
 
-    ((* if fit is defined *))
+    ((* if not none(fit) *))
     ((* for z in zs *))
     \addplot+[no markers, dashed, mesh, domain=((( fit['domain'] ))), point meta=((( z
     )))]{exp( ((( fit['m'][loop.index-1] ))) * x + ((( fit['b'][loop.index-1] ))) )};
