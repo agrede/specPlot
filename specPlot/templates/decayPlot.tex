@@ -156,10 +156,17 @@ range-units=single]{siunitx}
     legend pos = north east
     ]
 
+    ((* if multiplex  *))
     ((* for z in zs *))
     \addplot+[no markers, solid, smooth, mesh, point meta=((( z )))]
     table [x index=((( loop.index - 1 ))),y index=((( -1 + loop.index + loop.length ))),col sep=comma]{\dtapth};
     ((* endfor *))
+    ((* else *))
+    ((* for z in zs *))
+    \addplot+[no markers, solid, smooth, mesh, point meta=((( z )))]
+    table [x index=0, y index=((( loop.index ))),col sep=comma]{\dtapth};
+    ((* endfor *))
+    ((* endif *))
 
     ((* if fit is not none *))
     ((* for z in zs *))

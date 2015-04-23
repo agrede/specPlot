@@ -133,6 +133,8 @@ def range_filter(x, y, rngs):
     kx = np.where((x >= rngs['x'][0]) * (x <= rngs['x'][1]))[0]
     x = np.atleast_2d(x[kx]).transpose()
     y = y[kx, :]
+    kx, ky = np.where(((np.isnan(y))))
+    y[kx, ky] = rngs['y'][0]-1
     kx, ky = np.where(((y < rngs['y'][0]) + (y > rngs['y'][1])) > 0)
     y[kx, ky] = np.nan
     return (x, y)
@@ -329,7 +331,12 @@ def mkzdecay(pth, x, data, zs, fit, autoscale=False,
              labels={'xlabel': {'text': 'x'}, 'ylabel': {'text': 'y'}},
              rngs=None, limits=None, ticks=None):
     if (rngs is not None):
-        (x, data) = range_filter_2d(x, data, rngs)
+        if (len(x.shape) > 1 and x.shape[1] > 1):
+            (x, data) = range_filter_2d(x, data, rngs)
+            print("True")
+        else:
+            (x, data) = range_filter(x, data, rngs)
+            print("False")
     if (autoscale):
         data = data / np.nanmax(data, axis=0)
     if (limits is None or ticks is None):
