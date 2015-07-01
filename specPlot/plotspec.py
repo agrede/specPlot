@@ -9,7 +9,7 @@ This module is part of specPlot
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as codata
-import regex
+import re as regex
 from jinja2 import Environment, FileSystemLoader
 
 LATEX_SUBS = (
@@ -193,12 +193,22 @@ def default_Elabels():
     }
 
 
+def default_Ezlabels():
+    tmp = default_Elabels()
+    tmp['zlabel'] = {
+        'text': 'Temperature',
+        'symbol': 'T',
+        'units': '\\K'
+    }
+    return tmp
+
+
 def default_labels_temp():
     tmp = default_labels()
     tmp['zlabel'] = {
         'text': 'Temperature',
         'symbol': 'T',
-        'units': '\K'
+        'units': '\\K'
     }
     return tmp
 
@@ -319,6 +329,22 @@ def mkzplot(pth, lam, data, zs, autoscale=True, labels=default_labels_temp(),
     limits['zmin'] = zmin
     limits['zmax'] = zmax
     np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
+    template = texenv.get_template('temp.tex')
+    f = open(pth+".tex", 'w')
+    f.write(
+        template.render(limits=limits,
+                        ticks=ticks, labels=labels, zs=zs))
+    f.close()
+
+
+def mkEzplot(pth, E, data, zs, autoscale=True, labels=default_Ezlabels(),
+             rngs=None, limits=None, ticks=None):
+    (limits, ticks, E, data) = mkplot_genE(
+        E, data, autoscale, rngs, limits, ticks)
+    (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
+    limits['zmin'] = zmin
+    limits['zmax'] = zmax
+    np.savetxt(pth+".csv", np.hstack((E, data)), delimiter=',')
     template = texenv.get_template('temp.tex')
     f = open(pth+".tex", 'w')
     f.write(
