@@ -107,8 +107,8 @@ def cps(paths, t=1.0):
 
 
 def find_paths(dpath):
-    calpaths = sorted(glob(dpath + "c*.csv"))
-    dtapaths = sorted(glob(dpath + "D*.csv"))
+    calpaths = np.array(sorted(glob(dpath + "c*.csv")))
+    dtapaths = np.array(sorted(glob(dpath + "D*.csv")))
     return (calpaths, dtapaths)
 
 
