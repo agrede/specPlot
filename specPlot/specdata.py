@@ -202,3 +202,7 @@ def read_scope(paths):
         t[:, k] = tmp[:, 0]
         v.append(tmp[:, 1:])
     return (t, v)
+
+
+def enum(paths):
+    return [(k, p.split("/")[-1]) for k, p in enumerate(paths)]

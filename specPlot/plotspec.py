@@ -45,6 +45,10 @@ def elam(lam):
     return codata.h * codata.c / (codata.e * lam)
 
 
+def phie(lam, phi):
+    return (np.atleast_2d(lam/elam(lam)).T*phi)
+
+
 def data_ranges(x, major, minor):
     xmax = np.nanmax(x)
     xmin = np.nanmin(x)
