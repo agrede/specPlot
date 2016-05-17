@@ -10,12 +10,13 @@ import numpy as np
 import scipy.constants as codata
 from scipy.interpolate import interp1d
 from glob import glob
-from plotspec import range_filter
+from specPlot.plotspec import range_filter
 from datetime import datetime
 import re
+import os
 
 
-def calibration(measpath, refpath="OOIntensityData.csv", t=1.0):
+def calibration(measpath, refpath=os.path.join(os.path.dirname(__file__), "OOIntensityData.csv"), t=1.0):
     refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
     measdata = np.genfromtxt(measpath, delimiter=",", skip_header=2)
     ind = np.where((measdata[:, 0] >= refdata[:, 0].min()) *

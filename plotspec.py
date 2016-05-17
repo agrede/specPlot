@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as codata
 import re as regex
 from jinja2 import Environment, FileSystemLoader
+import os
 
 LATEX_SUBS = (
     (regex.compile(r'\\'), r'\\textbackslash'),
@@ -29,7 +30,7 @@ def escape_tex(value):
     return newval
 
 texenv = Environment(autoescape=False,
-                     loader=FileSystemLoader('./templates'))
+                     loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "templates")))
 texenv.block_start_string = '((*'
 texenv.block_end_string = '*))'
 texenv.variable_start_string = '((('
