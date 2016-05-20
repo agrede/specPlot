@@ -1,7 +1,7 @@
-PyVISA Drivers
+SpecPlot
 ==============
 
 
-Drivers for use with PyVISA
+Plotting and data analysis for spectrometer data.
 
-Copyright 2014 Alex J Grede
+Copyright 2014--2016 Alex J Grede
