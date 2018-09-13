@@ -11,5 +11,7 @@
     "pgfplots"
     "amsmath"
     "xfrac"
-    "bm")))
+    "bm"
+    "siunitx"))
+ :latex)
 

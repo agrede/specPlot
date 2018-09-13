@@ -11,5 +11,10 @@
     "pgfplots"
     "amsmath"
     "xfrac"
-    "bm")))
+    "bm"
+    "siunitx")
+   (LaTeX-add-siunitx-units
+    "decade"
+    "arb"))
+ :latex)
 

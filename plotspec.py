@@ -58,7 +58,7 @@ def data_ranges(x, major, minor):
     step_digits = np.array([-1, -1, -1, 0])
     m = np.ceil(np.log10(xrng/major))
     M = np.power(10, m)
-    ks = np.where(xrng / (M * step_range) < major)[0][0]
+    ks = np.where(xrng / (M * step_range) <= major)[0][0]
     step = M * step_range[ks]
     step_digit = m + step_digits[ks]
     nxmax = xmax + (step - np.mod(xmax, step)) * (np.mod(xmax, step) != 0)

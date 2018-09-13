@@ -10,17 +10,20 @@
 \usepackage{amsmath}
 \usepackage{xfrac}
 \usepackage{bm}
-\usepackage[use-xspace=true,
-redefine-symbols=false,
-range-units=single,
-inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
-\sisetup{detect-all}
+\usepackage{siunitx}
+\sisetup{
+  detect-all,
+  use-xspace=true,
+  redefine-symbols=false,
+  range-units=single,
+  inter-unit-product=\ensuremath{{}\cdot{}}
+}
 \edef\dtapth{\jobname.csv}
 \DeclareSIUnit\decade{decade}
 \DeclareSIUnit\arb{a.u.}
 
 \pgfplotsset{
-  compat=1.11,
+  compat=1.13,
   width=8.8cm,
   label style={font=\large},
   tick label style={font=\normalsize},
@@ -33,18 +36,13 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
 }
 
 % Generated using
-% http://tools.medialab.sciences-po.fr/iwanthue/index.php
-% 10 colors, soft (k-Means), H: 0 -- 278, C: 0.52 -- 3, L: 0 -- 1.5
+% http://colorbrewer2.org/?type=qualitative&scheme=Set1&n=7
 \definecolor{color0}{HTML}{377EB8}
 \definecolor{color1}{HTML}{E41A1C}
 \definecolor{color2}{HTML}{4DAF4A}
 \definecolor{color3}{HTML}{FF7F00}
 \definecolor{color4}{HTML}{984EA3}
 \definecolor{color5}{HTML}{A65628}
-% \definecolor{color6}{HTML}{D0B648}
-% \definecolor{color7}{HTML}{97A1D0}
-% \definecolor{color8}{HTML}{454324}
-% \definecolor{color9}{HTML}{7ED98F}
 
 \pgfplotscreateplotcyclelist{mycolor}{%
   color0,color1,color2,color3,color4,color5}
@@ -148,7 +146,9 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
   ((* endif *))
 \end{tikzpicture}
 \end{document}
+
 %%% Local Variables:
+%%% TeX-engine-set: luatex
 %%% mode: latex
 %%% TeX-master: t
 %%% End:

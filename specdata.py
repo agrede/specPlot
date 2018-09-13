@@ -113,6 +113,20 @@ def find_paths(dpath):
     return (calpaths, dtapaths)
 
 
+def fix_paths(dpath, n=2):
+    r = re.compile(r'(.+)(\d+)\.csv')
+    for pth in glob(dpath):
+        pfx = "/".join(pth.split("/")[:-1])
+        sfx = pth.split("/")[-1]
+        m = r.search(sfx)
+        if m is not None:
+            os.rename(
+                pth,
+                os.path.join(
+                    pfx,
+                    m.group(1) + m.group(2).zfill(n) + ".csv"))
+
+
 def norm_range(lam, lmin, lmax, Phi):
     k = np.where((lam >= lmin) * (lam <= lmax))[0]
     Phim = np.amax(Phi[k, :], axis=0)

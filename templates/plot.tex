@@ -1,6 +1,6 @@
 % Plot quick method using pgfplots to plot spect
 %
-% Copyright (C) 2014 Alex J. Grede
+% Copyright (C) 2014--2016 Alex J. Grede
 % GPL v3, See LICENSE.txt for details
 % This function is part of specPlot
 
@@ -10,17 +10,20 @@
 \usepackage{amsmath}
 \usepackage{xfrac}
 \usepackage{bm}
-\usepackage[use-xspace=true,
-redefine-symbols=false,
-range-units=single,
-inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
-\sisetup{detect-all}
+\usepackage{siunitx}
+\sisetup{
+  detect-all,
+  use-xspace=true,
+  redefine-symbols=false,
+  range-units=single,
+  inter-unit-product=\ensuremath{{}\cdot{}}
+}
 \edef\dtapth{\jobname.csv}
 \DeclareSIUnit\decade{decade}
 \DeclareSIUnit\arb{a.u.}
 
 \pgfplotsset{
-  compat=1.11,
+  compat=1.14,
   width=8.8cm,
   label style={font=\large},
   tick label style={font=\normalsize},
@@ -33,18 +36,13 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
 }
 
 % Generated using
-% http://tools.medialab.sciences-po.fr/iwanthue/index.php
-% 10 colors, soft (k-Means), H: 0 -- 278, C: 0.52 -- 3, L: 0 -- 1.5
+% http://colorbrewer2.org/?type=qualitative&scheme=Set1&n=7
 \definecolor{color0}{HTML}{377EB8}
 \definecolor{color1}{HTML}{E41A1C}
 \definecolor{color2}{HTML}{4DAF4A}
 \definecolor{color3}{HTML}{FF7F00}
 \definecolor{color4}{HTML}{984EA3}
 \definecolor{color5}{HTML}{A65628}
-% \definecolor{color6}{HTML}{D0B648}
-% \definecolor{color7}{HTML}{97A1D0}
-% \definecolor{color8}{HTML}{454324}
-% \definecolor{color9}{HTML}{7ED98F}
 
 \pgfplotscreateplotcyclelist{mycolor}{%
   color0,color1,color2,color3,color4,color5}
@@ -75,25 +73,25 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       /tikz/.cd
     },%
     ((* endif *))
-    ((* if ticks['xminor'] is defined *))%
-    minor xtick={((( ticks['xminor'] )))},%
-    ((* endif *))%
+    ((* if ticks['xminor'] is defined *))
+    minor xtick={((( ticks['xminor'] )))},
+    ((* endif *))
     xlabel={\textbf{%
         ((( labels['xlabel']['text'] ))) %
-        ((* if labels['xlabel']['symbol'] is defined *))%
+        ((* if labels['xlabel']['symbol'] is defined *))
         \(\bm{\left( ((( labels['xlabel']['symbol'] ))) \right)}\) %
-        ((* endif *))%
-        ((* if labels['xlabel']['units'] is defined *))%
+        ((* endif *))
+        ((* if labels['xlabel']['units'] is defined *))
         \(\bm{\left[%
-            ((* if labels['xlabel']['mult'] is defined *))%
+            ((* if labels['xlabel']['mult'] is defined *))
             \times
             \protect{\SI{((( labels['xlabel']['mult'] )))}{(((
                 labels['xlabel']['units'] )))}} %
-            ((* else *))%
+            ((* else *))
             \protect{\si{((( labels['xlabel']['units'] )))}}%
-            ((* endif *))%
+            ((* endif *))
           \right]}\)%
-        ((* endif *))%
+        ((* endif *))
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     ytick = {((( ticks['ymajor'] )))},
@@ -115,25 +113,25 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
       /tikz/.cd
     },%
     ((* endif *))
-    ((* if ticks['yminor'] is defined *))%
+    ((* if ticks['yminor'] is defined *))
     minor ytick={((( ticks['yminor'] )))},%
-    ((* endif *))%
+    ((* endif *))
     ylabel={\textbf{%
         ((( labels['ylabel']['text'] ))) %
-        ((* if labels['ylabel']['symbol'] is defined *))%
+        ((* if labels['ylabel']['symbol'] is defined *))
         \(\bm{\left( ((( labels['ylabel']['symbol'] ))) \right)}\) %
-        ((* endif *))%
-        ((* if labels['ylabel']['units'] is defined *))%
+        ((* endif *))
+        ((* if labels['ylabel']['units'] is defined *))
         \(\bm{\left[%
-            ((* if labels['ylabel']['mult'] is defined *))%
+            ((* if labels['ylabel']['mult'] is defined *))
             \times
             \protect{\SI{((( labels['ylabel']['mult'] )))}{(((
                 labels['ylabel']['units'] )))}} %
-            ((* else *))%
+            ((* else *))
             \protect{\si{((( labels['ylabel']['units'] )))}}%
-            ((* endif *))%
+            ((* endif *))
           \right]}\)%
-        ((* endif *))%
+        ((* endif *))
       }},
     legend style = {%
       % at={(axis cs:)},
@@ -158,9 +156,9 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     axis x line*=top,
     xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
     xtick = {((( ticks['x2major'] )))},%
-    ((* if ticks['x2minor'] is defined *))%
+    ((* if ticks['x2minor'] is defined *))
     minor xtick={((( ticks['x2minor'] )))},%
-    ((* endif *))%
+    ((* endif *))
     ((* if ticks['x2labels'] is iterable *))
     xticklabels = {((( ticks['x2labels']|join(', ') )))},%
     % x tick label style={
@@ -181,19 +179,19 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
     ((* endif *))
     xlabel={\textbf{%
         ((( labels['x2label']['text'] ))) %
-        ((* if labels['x2label']['symbol'] is defined *))%
+        ((* if labels['x2label']['symbol'] is defined *))
         \(\bm{\left( ((( labels['x2label']['symbol'] ))) \right)}\) %
-        ((* endif *))%
-        ((* if labels['x2label']['units'] is defined *))%
+        ((* endif *))
+        ((* if labels['x2label']['units'] is defined *))
         \(\bm{\left[%
-            ((* if labels['x2label']['mult'] is defined *))%
+            ((* if labels['x2label']['mult'] is defined *))
             \times
             \protect{\SI{((( labels['x2label']['mult'] )))}{((( labels['x2label']['units'] )))}}%
-            ((* else *))%
+            ((* else *))
             \protect{\si{((( labels['x2label']['units'] )))}}%
-            ((* endif *))%
+            ((* endif *))
           \right]}\)%
-        ((* endif *))%
+        ((* endif *))
       }},
     ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     hide y axis]
@@ -202,6 +200,7 @@ inter-unit-product=\ensuremath{{}\cdot{}}]{siunitx}
 \end{document}
 
 %%% Local Variables:
+%%% TeX-engine-set: luatex
 %%% mode: latex
 %%% TeX-master: t
 %%% End:
