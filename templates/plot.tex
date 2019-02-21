@@ -28,6 +28,10 @@
   label style={font=\large},
   tick label style={font=\normalsize},
   every axis/.append style={
+    xmin=((( limits['xmin'] ))),
+    xmax=((( limits['xmax'] ))),
+    ymin=((( limits['ymin'] ))),
+    ymax=((( limits['ymax'] ))),
     very thick,
     line cap=rect,
     tick style={very thick,line cap=rect,black}
@@ -51,9 +55,10 @@
 \begin{tikzpicture}
   \begin{axis}[
     scale only axis,
+    ((* if ticks['x2major'] is defined *))
     axis x line*=bottom,
+    ((* endif *))
     cycle list name = mycolor,
-    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
     xtick = {((( ticks['xmajor'] )))},
     ((* if ticks['xlabels'] is iterable *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
@@ -93,7 +98,6 @@
           \right]}\)%
         ((* endif *))
       }},
-    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     ytick = {((( ticks['ymajor'] )))},
     ((* if ticks['ylabels'] is iterable *))
     yticklabels = {((( ticks['ylabels']|join(', ') )))},%
@@ -151,51 +155,29 @@
 
     ((* endfor *))
   \end{axis}
+  ((* if ticks['x2major'] is defined *))
   \begin{axis}[
     scale only axis,
     axis x line*=top,
-    xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),
-    xtick = {((( ticks['x2major'] )))},%
+    ((* if labels['x2label']['units'] is defined *))
+    xtick = {((( ticks['x2major'][:-1]|join(', ') )))},%
+    xticklabels = {((( ticks['x2labels'][:-1]|join(', ') )))},%
+    extra x ticks = {((( ticks['x2major'][-1] )))},%
+    extra x tick labels = {\SI{((( ticks['x2labels'][-1] )))}{(((
+        labels['x2label']['units'] )))}},
+    extra x tick style={
+      xticklabel style={yshift=0ex, anchor=south},
+    },
+    ((* else *))
+    xtick = {((( ticks['x2major']|join(', ') )))},%
+    xticklabels = {((( ticks['x2labels']|join(', ') )))},%
+    ((* endif *))
     ((* if ticks['x2minor'] is defined *))
     minor xtick={((( ticks['x2minor'] )))},%
     ((* endif *))
-    ((* if ticks['x2labels'] is iterable *))
-    xticklabels = {((( ticks['x2labels']|join(', ') )))},%
-    % x tick label style={
-    %   /pgf/number format/.cd,
-    %   fixed,
-    %   fixed zerofill,
-    %   precision=1,
-    %   /tikz/.cd
-    % },%
-    ((* else *))
-    x tick label style={
-      /pgf/number format/.cd,
-      fixed,
-      fixed zerofill,
-      precision=((( ticks['x2labels']|int ))),
-      /tikz/.cd
-    },%
-    ((* endif *))
-    xlabel={\textbf{%
-        ((( labels['x2label']['text'] ))) %
-        ((* if labels['x2label']['symbol'] is defined *))
-        \(\bm{\left( ((( labels['x2label']['symbol'] ))) \right)}\) %
-        ((* endif *))
-        ((* if labels['x2label']['units'] is defined *))
-        \(\bm{\left[%
-            ((* if labels['x2label']['mult'] is defined *))
-            \times
-            \protect{\SI{((( labels['x2label']['mult'] )))}{((( labels['x2label']['units'] )))}}%
-            ((* else *))
-            \protect{\si{((( labels['x2label']['units'] )))}}%
-            ((* endif *))
-          \right]}\)%
-        ((* endif *))
-      }},
-    ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] ))),
     hide y axis]
   \end{axis}
+  ((* endif *))
 \end{tikzpicture}
 \end{document}
 
