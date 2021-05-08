@@ -237,14 +237,14 @@ def make_labels(xlabel, xsymbol, xunit,
     labels.update(make_gen_label('x', xlabel, xsymbol, xunit))
     labels.update(make_gen_label('y', ylabel, ysymbol, yunit))
     if zlabel:
-        labels.update(make_gen_label('z', ylabel, ysymbol, yunit))
+        labels.update(make_gen_label('z', zlabel, zsymbol, zunit))
     if x2unit:
         labels['x2label'] = {'text': "", 'units': x2unit}
     return labels
 
 
 def mkplot_axis(prefix, x, rtype='outer', major=7, minor=7):
-    if (rtype is 'outer'):
+    if (rtype == 'outer'):
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
     else:
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
@@ -261,13 +261,13 @@ def mkplot_axis(prefix, x, rtype='outer', major=7, minor=7):
 
 
 def mkplot_special_axis(prefix, x, fun, rtype='inner', major=7, minor=7):
-    if (rtype is 'outer'):
+    if (rtype == 'outer'):
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
     else:
         (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
     ticks = {}
     ticks[prefix+'major'] = ["%f" % fun(y) for y in np.linspace(
-            xjmax, xjmin, np.round((xjmax - xjmin) / xstep + 1))]
+            xjmax, xjmin, int(np.round((xjmax - xjmin) / xstep + 1)))]
     fmt = "%d"
     if np.log10(xstep) < -1.4:
         fmt = "%0.5e"
@@ -278,12 +278,12 @@ def mkplot_special_axis(prefix, x, fun, rtype='inner', major=7, minor=7):
     ticks[prefix+'labels'] = [
         fmt % y for y in
         np.linspace(xjmax, xjmin,
-                    np.round((xjmax - xjmin) / xstep + 1))]
+                    int(np.round((xjmax - xjmin) / xstep + 1)))]
 
     if (xstepm is not None):
         ticks[prefix+'minor'] = ",".join(
             ["%f" % fun(y) for y in np.linspace(
-                xmax, xmin, np.round((xmax - xmin) / xstepm + 1))])
+                xmax, xmin, int(np.round((xmax - xmin) / xstepm + 1)))])
     limits = {prefix+'min': xmin, prefix+'max': xmax}
     return (ticks, limits)
 
@@ -314,10 +314,10 @@ def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
 
 def mklamplot(pth, lam, data, legend, autoscale=True,
               labels=default_labels(), rngs=None, limits=None,
-              ticks=None):
+              ticks=None, xscale=1e9):
     (limits, ticks, lam, data) = mkplot_gen(
-        lam, data, autoscale, rngs, limits, ticks, elam, elam, 1e9)
-    np.savetxt(pth+".csv", np.hstack((lam*1e9, data)), delimiter=',')
+        lam, data, autoscale, rngs, limits, ticks, elam, elam, xscale)
+    np.savetxt(pth+".csv", np.hstack((lam*xscale, data)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
     f.write(
@@ -388,7 +388,8 @@ def mkzplot(pth, xs, data, zs,
 def mkEzplot(pth, E, data, zs, autoscale=True, labels=default_Ezlabels(),
              rngs=None, limits=None, ticks=None):
     (limits, ticks, E, data) = mkplot_gen(
-        E, data, autoscale, rngs, limits, ticks, elam)
+        E, data, autoscale, rngs, limits, ticks,
+        lambda x: elam(x)*1e9, lambda x: elam(x*1e-9))
     (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
     limits['zmin'] = zmin
     limits['zmax'] = zmax

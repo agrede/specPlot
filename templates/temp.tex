@@ -23,7 +23,7 @@
 \DeclareSIUnit\arb{a.u.}
 
 \pgfplotsset{
-  compat=1.14,
+  compat=newest,
   width=8.8cm,
   label style={font=\large},
   tick label style={font=\normalsize},
@@ -148,7 +148,7 @@
       font={\footnotesize},
       cells={anchor=west},
       draw=none},
-    legend pos = north east
+    legend pos = north east,
     colormap/viridis,
     point meta min=((( limits['zmin'] ))),
     point meta max=((( limits['zmax'] ))),
