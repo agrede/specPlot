@@ -107,9 +107,21 @@ def cps(paths, t=1.0):
     return (lam, cnts, fidx)
 
 
+def sort_numbered_paths(pths):
+    r = re.compile(r'\d+')
+    ns = []
+    M = 0
+    for pth in pths:
+        n = [int(x) for x in r.findall(pth)]
+        ns.append(n)
+        M = len(n) if M < len(n) else M
+    ms = sorted([tuple([-1]*(M-len(n))+n+[pth]) for n, pth in zip(ns, pths)])
+    return [m[-1] for m in ms]
+
+
 def find_paths(dpath):
-    calpaths = np.array(sorted(glob(dpath + "c*.csv")))
-    dtapaths = np.array(sorted(glob(dpath + "D*.csv")))
+    calpaths = np.array(sort_numbered_paths(glob(dpath + "c*.csv")))
+    dtapaths = np.array(sort_numbered_paths(glob(dpath + "D*.csv")))
     return (calpaths, dtapaths)
 
 
