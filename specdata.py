@@ -88,7 +88,7 @@ def img_counts(paths, t=1.0):
 
 def cps(paths, t=1.0):
     tmp = np.genfromtxt(paths[0], delimiter=",", skip_header=2)
-    lam = tmp[:, 0]
+    lam = tmp[:, 0]*1e-9
     cnts = np.zeros((lam.size, 0), float)
     fidx = []
     cidx = 0
