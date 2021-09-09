@@ -1,13 +1,12 @@
 """
 Spectrometer Data Plotter
 
-Copyright (C) 2014--2015 Alex J. Grede
+Copyright (C) 2014--2021 Alex J. Grede
 GPL v3, See LICENSE.txt for details
 This module is part of specPlot
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.constants as codata
 import re as regex
 from jinja2 import Environment, FileSystemLoader
@@ -29,8 +28,11 @@ def escape_tex(value):
         newval = pattern.sub(replacement, newval)
     return newval
 
-texenv = Environment(autoescape=False,
-                     loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "templates")))
+
+texenv = Environment(
+    autoescape=False,
+    loader=FileSystemLoader(
+        os.path.join(os.path.dirname(__file__), "templates")))
 texenv.block_start_string = '((*'
 texenv.block_end_string = '*))'
 texenv.variable_start_string = '((('

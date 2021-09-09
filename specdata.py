@@ -1,7 +1,7 @@
 """
 Spectrometer Data Reader
 
-Copyright (C) 2014--2015 Alex J. Grede
+Copyright (C) 2014--2021 Alex J. Grede
 GPL v3, See LICENSE.txt for details
 This module is part of specPlot
 """
@@ -16,7 +16,10 @@ import re
 import os
 
 
-def calibration(measpath, refpath=os.path.join(os.path.dirname(__file__), "OOIntensityData.csv"), t=1.0):
+def calibration(
+        measpath,
+        refpath=os.path.join(os.path.dirname(__file__), "OOIntensityData.csv"),
+        t=1.0):
     refdata = np.genfromtxt(refpath, delimiter=",", skip_header=1)
     measdata = np.genfromtxt(measpath, delimiter=",", skip_header=2)
     ind = np.where((measdata[:, 0] >= refdata[:, 0].min()) *

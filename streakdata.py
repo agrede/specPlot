@@ -5,6 +5,7 @@ import pint
 
 UREG = pint.UnitRegistry()
 
+
 def rdbytes(x, signed=True):
     return int.from_bytes(x, byteorder='little', signed=signed)
 
@@ -26,11 +27,14 @@ def readCalScale(f, config, axis, ureg=UREG):
 
 def readStreak(pth, ureg=UREG):
     """
-    Read streak camera file
-    Returns:
-    numpy.ndarray: wavelengths
-    numpy.ndarray: times
-    numpy.ndarray: counts
+    Read Hammamatsu streak camera file
+
+    Returns
+    -------
+    wavelengths: numpy.ndarray
+    times : numpy.ndarray
+    counts : numpy.ndarray
+    config : ConfigParser
     """
     rgxsplt = re.compile(r",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
     ftypes = [np.int8, None, np.int16, np.int32]
