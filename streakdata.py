@@ -1,3 +1,4 @@
+import numpy as np
 from configparser import ConfigParser
 import re
 import pint
@@ -11,7 +12,7 @@ def rdbytes(x, signed=True):
 def readCalScale(f, config, axis, ureg=UREG):
     rgxspos = re.compile(r"\"#(\d+),(\d+)\".*")
     units = ureg.parse_expression(
-        cfg['Scaling']["scaling{:s}unit".format(
+        config['Scaling']["scaling{:s}unit".format(
             axis.lower())][1:-1]).u
     if m := rgxspos.match(
             config['Scaling']["scaling{:s}scalingfile".format(
@@ -55,6 +56,6 @@ def readStreak(pth, ureg=UREG):
             values = None
         scaleX = readCalScale(f, config, "x", ureg)
         scaleY = readCalScale(f, config, "y", ureg)
-        if cfg['Acquisition']['zaxisunit'].lower() == "count":
+        if config['Acquisition']['zaxisunit'].lower() == "count":
             values = values*ureg.count
     return scaleX, scaleY, values, config
