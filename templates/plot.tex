@@ -1,6 +1,6 @@
 % Plot quick method using pgfplots to plot spect
 %
-% Copyright (C) 2014--2016 Alex J. Grede
+% Copyright (C) 2014--2022 Alex J. Grede
 % GPL v3, See LICENSE.txt for details
 % This function is part of specPlot
 
@@ -14,11 +14,12 @@
 \sisetup{
   detect-all,
   use-xspace=true,
-  redefine-symbols=false,
   range-units=single}
 \edef\dtapth{\jobname.csv}
+\edef\imgpth{\jobname.png}
 \DeclareSIUnit\decade{decade}
 \DeclareSIUnit\arb{a.u.}
+\DeclareSIUnit\dBm{dBm}
 
 \pgfplotsset{
   compat=newest,
@@ -32,7 +33,9 @@
     ymax=((( limits['ymax'] ))),
     very thick,
     line cap=rect,
-    tick style={very thick,line cap=rect,black}
+    tick style={very thick,line cap=rect,((( tickcolor )))},
+    axis on top,
+    scale only axis
   },
   every axis plot/.append style={thick}
 }
@@ -51,12 +54,17 @@
 
 \begin{document}
 \begin{tikzpicture}
-  \begin{axis}[
-    scale only axis,
+  \begin{((( axistype )))}[
     ((* if ticks['x2major'] is defined *))
     axis x line*=bottom,
     ((* endif *))
+    ((* if title is defined *))
+    title={((( title )))},
+    ((* endif *))
     cycle list name = mycolor,
+    ((* if 'xlog' in ticks *))
+    xtickten = {((( ticks['xlog'] )))},%
+    ((* else *))
     xtick = {((( ticks['xmajor'] )))},
     ((* if ticks['xlabels'] is iterable *))
     xticklabels = {((( ticks['xlabels']|join(', ') )))},%
@@ -79,6 +87,7 @@
     ((* if ticks['xminor'] is defined *))
     minor xtick={((( ticks['xminor'] )))},
     ((* endif *))
+    ((* endif *))
     xlabel={%
         ((( labels['xlabel']['text'] ))) %
         ((* if labels['xlabel']['symbol'] is defined *))
@@ -96,6 +105,9 @@
           \right]\)%
         ((* endif *))
       },
+    ((* if 'ylog' in ticks *))
+    ytickten = {((( ticks['ylog'] )))},%
+    ((* else *))
     ytick = {((( ticks['ymajor'] )))},
     ((* if ticks['ylabels'] is iterable *))
     yticklabels = {((( ticks['ylabels']|join(', ') )))},%
@@ -117,6 +129,7 @@
     ((* endif *))
     ((* if ticks['yminor'] is defined *))
     minor ytick={((( ticks['yminor'] )))},%
+    ((* endif *))
     ((* endif *))
     ylabel={%
         ((( labels['ylabel']['text'] ))) %
@@ -141,25 +154,106 @@
       font={\footnotesize},
       cells={anchor=west},
       draw=none},
-    legend pos = north east
+    legend pos = north east,
+    ((* if 'zmin' in limits *))
+    colormap/viridis,
+    point meta min=((( limits['zmin'] ))),
+    point meta max=((( limits['zmax'] ))),
+    ((* if image is defined *))
+    colorbar,
+    colorbar style={
+      ytick = {((( ticks['zmajor'] )))},
+      ((* if ticks['zlabels'] is iterable *))
+      yticklabels = {((( ticks['zlabels']|join(',') )))},%
+      % y tick label style={
+      %   /pgf/number format/.cd,
+      %   fixed,
+      %   fixed zerofill,
+      %   precision=1,
+      %   /tikz/.cd
+      % },%
+      ((* else *))
+      y tick label style={
+        /pgf/number format/.cd,
+        fixed,
+        fixed zerofill,
+        precision=((( ticks['zlabels']|int ))),
+        /tikz/.cd
+      },%
+      ((* endif *))
+      ((* if ticks['zminor'] is defined *))
+      minor ytick={((( ticks['zminor'] )))},%
+      ((* endif *))
+      ylabel={%
+        ((( labels['zlabel']['text'] ))) %
+        ((* if labels['zlabel']['symbol'] is defined *))
+        \(\left( ((( labels['zlabel']['symbol'] ))) \right)\) %
+        ((* endif *))
+        ((* if labels['zlabel']['units'] is defined *))
+        \(\left[%
+            ((* if labels['zlabel']['mult'] is defined *))
+            \times
+            \protect{\SI{((( labels['zlabel']['mult'] )))}{(((
+                labels['zlabel']['units'] )))}} %
+            ((* else *))
+            \protect{\si{((( labels['zlabel']['units'] )))}}%
+            ((* endif *))
+          \right]\)%
+        ((* endif *))
+      },
+      label style={font=\normalsize},
+      tick label style={font=\small}
+    }
+    ((* endif *))
+    ((* endif *))
     ]
+    ((* if labels['zlabel']['text'] is defined *))
+    % Z-axis : ((( labels['zlabel']['text'] )))
+    ((* endif *))
+    ((* if labels['zlabel']['symbol'] is defined *))
+    % Z-symbol : ((( labels['zlabel']['symbol'] )))
+    ((* endif *))
+    ((* if labels['zlabel']['units'] is defined *))
+    % Z-unit : ((( labels['zlabel']['units'] )))
+    ((* endif *))
+    ((* if labels['zlabel']['mult'] is defined *))
+    % Z-mult : ((( labels['zlabel']['mult'] )))
+    ((* endif *))
 
+    ((* if legend is defined *))
     ((* for leg in legend *))
 
-    \addplot+[no markers, solid, smooth]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
-
-    \addlegendentry{((( leg )))}
-
+    ((* if multiplex *))
+    \addplot+[((( linestyle )))]
+    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth}
+    node[pos=0.5, above] {\footnotesize ((( leg )))};
+    ((* else *))
+    \addplot+[((( linestyle )))]
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth}
+    node[pos=0.5, above] {\footnotesize ((( leg )))};
+    ((* endif *))
+    % \addlegendentry{((( leg )))}
     ((* endfor *))
-  \end{axis}
+    ((* elif zs is defined *))
+    ((* for z in zs *))
+    ((* if multiplex *))
+    \addplot+[((( linestyle ))), mesh, point meta=((( z )))]
+    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth};
+    ((* else *))
+    \addplot+[((( linestyle ))), mesh, point meta=((( z )))]
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
+    ((* endif *))
+    ((* endfor *))
+    ((* elif image is defined *))
+    \addplot graphics[xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] )))] {\imgpth};
+    ((* endif *))
+  \end{((( axistype )))}
   ((* if ticks['x2major'] is defined *))
-  \begin{axis}[
-    scale only axis,
+  \begin{((( axistype )))}[
     axis x line*=top,
     ((* if labels['x2label']['units'] is defined *))
-    xtick = {((( ticks['x2major'][:-1]|join(', ') )))},%
-    xticklabels = {((( ticks['x2labels'][:-1]|join(', ') )))},%
+    xtick = {((( ticks['x2major'][:-1]|join(',') )))},%
+    xticklabels = {((( ticks['x2labels'][:-1]|join(',') )))},%
     extra x ticks = {((( ticks['x2major'][-1] )))},%
     extra x tick labels = {\SI{((( ticks['x2labels'][-1] )))}{(((
         labels['x2label']['units'] )))}},
@@ -167,14 +261,14 @@
       xticklabel style={yshift=0ex, anchor=south},
     },
     ((* else *))
-    xtick = {((( ticks['x2major']|join(', ') )))},%
-    xticklabels = {((( ticks['x2labels']|join(', ') )))},%
+    xtick = {((( ticks['x2major']|join(',') )))},%
+    xticklabels = {((( ticks['x2labels']|join(',') )))},%
     ((* endif *))
     ((* if ticks['x2minor'] is defined *))
-    minor xtick={((( ticks['x2minor'] )))},%
+    minor xtick={((( ticks['x2minor']|join(',') )))},%
     ((* endif *))
     hide y axis]
-  \end{axis}
+  \end{((( axistype )))}
   ((* endif *))
 \end{tikzpicture}
 \end{document}

@@ -7,8 +7,10 @@ This module is part of specPlot
 """
 
 import numpy as np
-import scipy.constants as codata
+import scipy.constants as PC
+import matplotlib.pyplot as plt
 import re as regex
+from numbers import Number
 from jinja2 import Environment, FileSystemLoader
 import os
 
@@ -44,96 +46,170 @@ texenv.lstrip_blocks = True
 texenv.trim_blocks = True
 
 
-def elam(lam):
-    return codata.h * codata.c / (codata.e * lam)
+def first_where(expr):
+    """
+    index of the first occurrence of non-zero expr or None if all zero
+    """
+    return next((k for k, v in enumerate(expr) if v), None)
 
 
-def phie(lam, phi):
-    return (np.atleast_2d(lam/elam(lam)).T*phi)
+def elam(x):
+    """
+    Change wavelength to energy and reverse
+
+    Parameters
+    ----------
+    x : {float, array_like}
+        wavelength in m or energy in eV
+
+    Returns
+    -------
+    {float, array_like} : wavelength<->eV
+    """
+    return PC.h * PC.c / (PC.e * x)
 
 
-def data_ranges(x, major, minor):
+def phie(x, phi):
+    """
+    Change phi num/unit wavelength to num/per unit energy and reverse
+
+    Parameters
+    ----------
+    x : array_like
+        wavelength in m or energy in eV
+    phi : num / unit x
+
+    Returns
+    -------
+    numpy.ndarray : Change of units version of phie
+    """
+    return (np.atleast_2d(x/elam(x)).T*phi)
+
+
+def data_minmax(xmin, xmax, step, inner):
+    """
+    floor / ceiling divide depending on inner
+
+    Parameters
+    ----------
+    xmin : float
+        minimum numerator
+    xmax : float
+        maximum numerator
+    step : float
+        divisor
+    inner : bool
+        floor / ceiling swap
+
+    Returns
+    -------
+    min : float
+        nearest step size away from xmin (ceiling for inner)
+    max : float
+        nearest step size away from xmax (floor for inner)
+    """
+    if inner:
+        return (step*np.ceil(xmin/step), step*np.floor(xmax/step))
+    else:
+        return (step*np.floor(xmin/step), step*np.ceil(xmax/step))
+
+
+def data_ranges(x, major, minor, inner=False):
+    """
+    Find data ranges
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        array of data
+    major : int
+        maximum number of major ticks
+    minor : int
+        maximum number of minor ticks between majors
+    inner : bool
+        all ticks will be within data range
+
+    Returns
+    -------
+    minormin : float
+        minor min
+    minormax : float
+        minor max
+    minorstep : float
+         minor step
+    majormin : float
+        major min
+    majormax : float
+         major max
+    majorstep : float
+         major step
+    """
     xmax = np.nanmax(x)
     xmin = np.nanmin(x)
     xrng = xmax - xmin
     step_range = np.array([0.1, 0.2, 0.5, 1])
     step_digits = np.array([-1, -1, -1, 0])
-    m = np.ceil(np.log10(xrng/major))
-    M = np.power(10, m)
-    ks = np.where(xrng / (M * step_range) <= major)[0][0]
-    step = M * step_range[ks]
-    step_digit = m + step_digits[ks]
-    nxmax = xmax + (step - np.mod(xmax, step)) * (np.mod(xmax, step) != 0)
-    nxmin = xmin - np.mod(xmin, step)
-    nmxmax = nxmax
-    nmxmin = nxmin
-    stepm = None
-    if (minor > 0):
-        Mm = np.power(10, step_digit)
-        tmp = np.where(step / (Mm * step_range) < minor)[0]
-        if (tmp.size > 0):
-            ksm = tmp[0]
-            stepm = Mm * step_range[ksm]
-            if (xmax <= nxmax-stepm):
-                nxmax = nxmax-step
-                nmxmax = xmax + (stepm - np.mod(xmax, stepm))
-            if (xmin >= nxmin+stepm):
-                nxmin = nxmin + step
-                nmxmin = xmin - np.mod(xmin, stepm)
-            if (nmxmin >= nxmin-stepm):
-                nmxmin = nxmin-stepm
-            if (nmxmax <= nxmax+stepm):
-                nmxmax = nxmax+stepm
-    return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
+    m = int(np.ceil(np.log10(xrng/major)))
+    M = 10.**m
+    k = first_where(xrng / (M * step_range) <= major)
+    majorstep = M * step_range[k]
+    step_digit = m + step_digits[k]
+    majormin, majormax = data_minmax(xmin, xmax, majorstep, inner)
+    minormin = majormin
+    minormax = majormax
+    minorstep = None
+    Mm = 10.**step_digit
+    ksm = first_where(majorstep / (Mm * step_range) <= minor)
+    if (minor > 0 and ksm is not None):
+        minorstep = Mm * step_range[ksm]
+        minormin, minormax = data_minmax(xmin, xmax, minorstep, inner)
+        if not inner:
+            if xmax <= majormax-minorstep:
+                majormax -= majorstep
+            if xmin >= majormin+minorstep:
+                majormin += majorstep
+    return (minormin, minormax, minorstep), (majormin, majormax, majorstep)
 
 
-def data_log_ranges(x):
-    xmax = np.nanmax(x)
-    xmin = np.nanmin(x)
-    lmax = np.ceil((np.log10(xmax)))
-    lmin = np.floor((np.log10(xmin)))
-    pmax = np.power(10, lmax)
-    pmin = np.power(10, lmin)
-    if (xmax/pmax > 0.8):
-        pmax = 2*pmax
-        lmax = lmax+1
-    if (pmin/xmin < 2):
-        pmin = 0.8*pmin
-        lmin = lmin-1
-    return (pmin, pmax, lmin, lmax)
+def data_log_ranges(xs, inner=False):
+    """
+    log10 minimum and maximum values
 
+    Parameters
+    ----------
+    xs : numpy.ndarray
+        data for ranging
+    inner : bool
+        stay within x bounds (default: false)
 
-def data_inner_ranges(x, major, minor):
-    xmax = np.nanmax(x)
-    xmin = np.nanmin(x)
-    xrng = xmax - xmin
-    step_range = np.array([0.1, 0.2, 0.5, 1])
-    step_digits = np.array([-1, -1, -1, 0])
-    m = np.ceil(np.log10(xrng/major))
-    M = np.power(10, m)
-    ks = np.where(xrng / (M * step_range) < major)[0][0]
-    step = M * step_range[ks]
-    step_digit = m + step_digits[ks]
-    nxmax = xmax - np.mod(xmax, step)
-    nxmin = xmin + (step - np.mod(xmin, step)) * (np.mod(xmin, step) != 0)
-    nmxmax = nxmax
-    nmxmin = nxmin
-    stepm = None
-    if (minor > 0):
-        Mm = np.power(10, step_digit)
-        tmp = np.where(step / (Mm * step_range) < minor)[0]
-        if (tmp.size > 0):
-            ksm = tmp[0]
-            stepm = Mm * step_range[ksm]
-            if (xmax >= nxmax + stepm):
-                nmxmax = xmax - np.mod(xmax, stepm)
-            if (xmin <= nxmin - stepm):
-                nmxmin = xmin + (stepm - np.mod(xmin, stepm))
-    return (nmxmin, nmxmax, nxmin, nxmax, step, stepm)
-
-
-def tosinum(xs, option):
-    return ['\protect{\\num[' + option + ']{%.1e}}' % x for x in xs]
+    Returns
+    -------
+    minors : tuple(float, float)
+        minor min, max
+    lmajors : tuple(int)
+        log10 major min, max
+    """
+    xmax = np.nanmax(xs)
+    xmin = np.nanmin(xs)
+    lmajors = [int(t) for t in data_minmax(
+        np.log10(xmin), np.log10(xmax), 1, inner)]
+    majors = [10**t for t in lmajors]
+    minorsteps = [10**(t0+t1+1*inner) for t0, t1 in zip(lmajors, [0, -1])]
+    minors = [t0*t1 for t0, t1 in zip(
+        data_minmax(xmin/minorsteps[0], xmax/minorsteps[1], 1.0, inner),
+        minorsteps)]
+    if not inner:
+        if minors[0]/majors[0] < 2:
+            lmajors[0] -= 1
+            minors[0] = 0.8*majors[0]
+        else:
+            minors[0] -= majors[0]
+        if minors[1]/majors[1] > 0.8:
+            lmajors[1] += 1
+            minors[1] = 2*majors[1]
+        else:
+            minors[1] += 0.1*majors[1]
+    return minors, lmajors
 
 
 def range_filter(x, y, rngs):
@@ -158,66 +234,6 @@ def range_filter_2d(x, y, rngs):
     x = x[k, :]
     y = y[k, :]
     return (x, y)
-
-
-def default_labels():
-    return {
-        'xlabel': {
-            'text': 'Wavelength',
-            'symbol': '\\lambda',
-            'units': '\\nm'
-        },
-        'ylabel': {
-            'text': 'Photon Flux',
-            'symbol': '\\phi',
-            'units': '\\arb'
-        },
-        'x2label': {
-            'text': 'Photon Energy',
-            'symbol': 'h \\nu',
-            'units': '\\eV'
-        }
-    }
-
-
-def default_Elabels():
-    return {
-        'xlabel': {
-            'text': 'Photon Energy',
-            'symbol': 'h \\nu',
-            'units': '\\eV'
-        },
-        'ylabel': {
-            'text': 'Photon Flux',
-            'symbol': '\\phi',
-            'units': '\\arb'
-        },
-        'x2label': {
-            'text': 'Wavelength',
-            'symbol': '\\lambda',
-            'units': '\\nm'
-        }
-    }
-
-
-def default_Ezlabels():
-    tmp = default_Elabels()
-    tmp['zlabel'] = {
-        'text': 'Temperature',
-        'symbol': 'T',
-        'units': '\\K'
-    }
-    return tmp
-
-
-def default_labels_temp():
-    tmp = default_labels()
-    tmp['zlabel'] = {
-        'text': 'Temperature',
-        'symbol': 'T',
-        'units': '\\K'
-    }
-    return tmp
 
 
 def make_gen_label(pfx, label, symbol, unit):
@@ -245,269 +261,611 @@ def make_labels(xlabel, xsymbol, xunit,
     return labels
 
 
-def mkplot_axis(prefix, x, rtype='outer', major=7, minor=7):
-    if (rtype == 'outer'):
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
+def mktick_fstr(step, single=False):
+    prec = max(int(np.ceil(-np.log10(step))), 0)
+    fsing = ("{:0."+str(prec)+"f}")
+    if single:
+        return fsing, prec
     else:
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
-    ticks = {prefix+'major': '%f,%f,...,%f' % (
-        xjmin, xjmin+xstep, xjmax+xstep)}
-    limits = {prefix+'min': xmin, prefix+'max': xmax}
-    if (xstepm is not None):
-        ticks[prefix+'minor'] = '%f,%f,...,%f' % (
-            xmin, xmin+xstepm, xmax+xstepm)
-    ticks[prefix+'labels'] = np.round(-np.log10(xstep)*2)
-    if (ticks[prefix+'labels'] < 0):
-        ticks[prefix+'labels'] = 0
-    return (ticks, limits)
+        return ",".join([s for s in [fsing]*2+["...", fsing]]), prec
 
 
-def mkplot_special_axis(prefix, x, fun, rtype='inner', major=7, minor=7):
-    if (rtype == 'outer'):
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_ranges(x, 7, 7)
+def inc_arange(start, stop, step=1):
+    """
+    np.arange with inclusive stop
+
+    Parameters
+    ----------
+    start : Number
+    stop : Number
+    step : Number
+
+    Returns
+    -------
+    numpy.ndarray
+    """
+    if type(step) is int:
+        return np.arange(start, stop+step, step)
     else:
-        (xmin, xmax, xjmin, xjmax, xstep, xstepm) = data_inner_ranges(x, 7, 7)
+        return np.arange(start, stop+0.05*step, step)
+
+
+def pgfplots_inc_arange(start, stop, step):
+    """
+    Returns tuple for generating tikz style ranges
+    i.e. {start,start+step,...,stop}
+
+    Parameters
+    ----------
+    start : Number
+    stop : Number
+    step : Number
+
+    Returns
+    -------
+    tuple(Number, Number, Number)
+    """
+    return (start, start+step, stop+step)
+
+
+def minor_log_ticks(minors, lmajors):
+    """
+    Base 10 minor tick-marks array
+
+    Parameters
+    ----------
+    minors : tuple(float, float)
+        min, max minor ticks
+    lmajors
+        min, max log10 major ticks
+
+    Returns
+    -------
+    list (float)
+    """
+    powers = np.power(
+        10., inc_arange(lmajors[0], lmajors[1], 1)).reshape((-1, 1))
+    mticks = np.arange(1, 10).reshape((1, -1))
+    return [x for x in (powers*mticks).ravel()
+            if x >= minors[0] and x <= minors[1]]
+
+
+def mkplot_axis(
+        prefix, xs, ifun=None, log=False, inner=False, major=7, minor=7,
+        xscale=1., x2scale=1., allticks=False):
+    """
+    Make axis limits and ticks
+
+    Parameters
+    ----------
+    prefix : str
+        axis prefix
+    xs : numpy.ndarray
+        data to build axis for
+    ifun : callable, optional
+        Function to convert labels values to tick values
+    log : bool, optional
+        log scale values
+    inner : bool, optional
+        axis marks should be within xs values
+    major : int, optional
+        maximum number of major ticks
+    minor : int, optional
+        maximum number of minor ticks between majors
+    xscale : float, optional
+        scale x values by this number
+    x2scale : float, optional
+        scale x2 values by this number
+    allticks : bool, optional
+        return all ticks regardless of ifun
+
+    Returns
+    -------
+    ticks : dict
+        partial dictionary for template ticks argument for given axis prefix
+    limits : dict
+        partial dictionary for template limits argument for given axis prefix
+    """
     ticks = {}
-    ticks[prefix+'major'] = ["%f" % fun(y) for y in np.linspace(
-            xjmax, xjmin, int(np.round((xjmax - xjmin) / xstep + 1)))]
-    fmt = "%d"
-    if np.log10(xstep) < -1.4:
-        fmt = "%0.5e"
-    elif np.log10(xstep) < -1.1:
-        fmt = "%0.2f"
-    elif np.log10(xstep) < 0:
-        fmt = "%0.1f"
-    ticks[prefix+'labels'] = [
-        fmt % y for y in
-        np.linspace(xjmax, xjmin,
-                    int(np.round((xjmax - xjmin) / xstep + 1)))]
-
-    if (xstepm is not None):
-        ticks[prefix+'minor'] = ",".join(
-            ["%f" % fun(y) for y in np.linspace(
-                xmax, xmin, int(np.round((xmax - xmin) / xstepm + 1)))])
-    limits = {prefix+'min': xmin, prefix+'max': xmax}
+    limits = {}
+    if log:
+        minors, lmajors = data_log_ranges(xs, inner)
+        if ifun or allticks:
+            if ifun:
+                ticks[prefix+'major'] = [
+                    "{:f}".format(ifun(x/x2scale)*xscale)
+                    for x in np.power(10., inc_arange(*lmajors))]
+                ticks[prefix+'minor'] = [
+                    "{:f}".format(ifun(x/x2scale)*xscale)
+                    for x in minor_log_ticks(minors, lmajors)]
+            else:
+                ticks[prefix+'major'] = [
+                    "{:f}".format(x)
+                    for x in np.power(10., inc_arange(*lmajors))]
+                ticks[prefix+'minor'] = [
+                    "{:f}".format(x)
+                    for x in minor_log_ticks(minors, lmajors)]
+            ticks[prefix+'labels'] = [
+                "\\num{{e{:d}}}".format(x) for x in inc_arange(*lmajors)]
+        else:
+            ticks[prefix+'log'] = mktick_fstr(1)[0].format(
+                *pgfplots_inc_arange(lmajors[0], lmajors[1], 1))
+    else:
+        minors, majors = data_ranges(xs, major, minor, inner)
+        fstr, prec = mktick_fstr(majors[2], ifun or allticks)
+        if ifun or allticks:
+            if ifun:
+                ticks[prefix+'major'] = [
+                    "{:f}".format(ifun(x/x2scale)*xscale)
+                    for x in inc_arange(*majors)]
+                if minors[2] is not None:
+                    ticks[prefix+'minor'] = [
+                        "{:f}".format(ifun(x/x2scale)*xscale)
+                        for x in inc_arange(*minors)]
+            else:
+                ticks[prefix+'major'] = [
+                    "{:f}".format(x)
+                    for x in inc_arange(*majors)]
+                if minors[2] is not None:
+                    ticks[prefix+'minor'] = [
+                        "{:f}".format(x)
+                        for x in inc_arange(*minors)]
+            ticks[prefix+'labels'] = [
+                fstr.format(x) for x in inc_arange(*majors)]
+        else:
+            ticks[prefix+'major'] = fstr.format(*pgfplots_inc_arange(*majors))
+            if minors[2] is not None:
+                fstrm = mktick_fstr(minors[2])[0]
+                ticks[prefix+'minor'] = fstrm.format(
+                    *pgfplots_inc_arange(*minors))
+            ticks[prefix+'labels'] = prec
+    limits = {prefix+'min': minors[0], prefix+'max': minors[1]}
     return (ticks, limits)
 
 
 def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
-               fun=None, ifun=None, xscale=1.):
+               logx=False, logy=False,
+               fun=None, ifun=None,
+               xscale=1., yscale=1., x2scale=1.):
+    """
+    Filter and setup limits and ticks template arguments
+
+    Parameters
+    ----------
+    xs : {(N,), (N,M)} array_like
+        x axis values
+    data : (N,M) array_like
+        y for xs points
+    autoscale : bool
+        divide y values by maximum value
+    rngs : dict
+        filter out data given {'x': [min, max], 'y': [min, max]}
+    limits : dict
+        existing limits template argument not to update without overwrite
+    ticks : dict
+        existing ticks template argument not to update without overwrite
+    logx : bool, optional
+        logscale x values
+    logy : bool, optional
+        logscale y values
+    fun : callable, optional
+        function to translate x-axis to x2 axis
+    ifun : callable,  optional
+        function to translate x2-axis to x-axis
+    xscale : float, optional
+        scale x values by this number
+    yscale : float, optional
+        scale y values by this number
+    x2scale : float, optional
+        scale x2 values by this number
+
+    Returns
+    -------
+    limits : dict
+        updated limits template argument without overwrite
+    ticks : dict
+        updated ticks template argument without overwrite
+    xs : array_like
+        filtered xs values (nans or removes rows with all nans)
+    data : array_like
+        filtered data (nans or removes rows with all nans)
+    """
     if (rngs is not None):
         (xs, data) = range_filter(xs, data, rngs)
     if (autoscale):
         data = data / np.nanmax(data)
-    if (limits is None or ticks is None):
-        limits = {}
-        ticks = {}
-        (t_ticks, t_limits) = mkplot_axis('x', xs*xscale)
-        ticks.update(t_ticks)
-        limits.update(t_limits)
-        if fun is not None:
-            (t_ticks, t_limits) = mkplot_special_axis(
-                'x2',
-                fun(np.array([limits['xmin'], limits['xmax']])/xscale),
-                ifun)
-        ticks.update(t_ticks)
-        (t_ticks, t_limits) = mkplot_axis('y', data)
-        ticks.update(t_ticks)
-        limits.update(t_limits)
+    (t_ticks, t_limits) = mkplot_axis('x', xs*xscale, log=logx)
+    ticks = {**t_ticks, **ticks}
+    limits = {**t_limits, **limits}
+    if fun is not None:
+        (t_ticks, t_limits) = mkplot_axis(
+            'x2',
+            x2scale*fun(np.array([limits['xmin'], limits['xmax']])/xscale),
+            ifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)
+        ticks = {**t_ticks, **ticks}
+    (t_ticks, t_limits) = mkplot_axis('y', data*yscale, log=logy)
+    ticks = {**t_ticks, **ticks}
+    limits = {**t_limits, **limits}
     return (limits, ticks, xs, data)
 
 
-def mklamplot(pth, lam, data, legend, autoscale=True,
-              labels=default_labels(), rngs=None, limits=None,
-              ticks=None, xscale=1e9):
-    (limits, ticks, lam, data) = mkplot_gen(
-        lam, data, autoscale, rngs, limits, ticks, elam, elam, xscale)
-    np.savetxt(pth+".csv", np.hstack((lam*xscale, data)), delimiter=',')
-    template = texenv.get_template('plot.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(limits=limits,
-                        ticks=ticks, labels=labels, legend=legend))
-    f.close()
-
-
-def mkEplot(pth, E, data, legend, autoscale=True, labels=default_Elabels(),
-            rngs=None, limits=None, ticks=None):
-    (limits, ticks, E, data) = mkplot_gen(
-        E, data, autoscale, rngs, limits, ticks,
-        lambda x: elam(x)*1e9, lambda x: elam(x*1e-9))
-    np.savetxt(pth+".csv", np.hstack((E, data)), delimiter=',')
-    template = texenv.get_template('plot.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(limits=limits,
-                        ticks=ticks, labels=labels, legend=legend))
-    f.close()
-
-
-def mkplot(pth, xs, data, legend,
+def mkplot(pth, xs, data, legendorzs,
            xlabel, xsymbol, xunit,
-           ylabel, ysymbol, yunit, fun=None, ifun=None,
+           ylabel, ysymbol, yunit,
+           zlabel=None, zsymbol=None, zunit=None,
+           title=None,
+           fun=None, ifun=None,
            x2unit=None,
-           autoscale=False, rngs=None, limits=None, ticks=None):
+           autoscale=False, rngs=None, limits={}, ticks={},
+           logx=False, logy=False, logz=False,
+           xscale=1., yscale=1., zscale=1., x2scale=1.,
+           linestyle=True):
+    """
+    Makeplot
+
+    Parameters
+    ----------
+    pth : str
+        path without file extensions to write to
+    xs : {(N,), (N,M)} array_like
+        x axis values
+    data : (N,M) array_like
+        y for xs points
+    legendorzs : (M,) array_like
+        legend (node text) for each addplot or if numeric creates meshplot type
+    xlabel : str
+        x-axis label text
+    xsymbol : str
+        x-axis label symbol (in math environment)
+    xunit : str
+        x-axis siunitx style units
+    ylabel : str
+        y-axis label text
+    ysymbol : str
+        y-axis label symbol (in math environment)
+    yunit : str
+        y-axis siunitx style units
+    zlabel : str, optional
+        z-axis label text
+    zsymbol : str, optional
+        z-axis label symbol (in math environment)
+    zunit : str, optional
+        z-axis siunitx style units
+    title : str, optional
+        Title for plot
+    fun : callable, optional
+        function to translate x-axis to x2 axis
+    ifun : callable,  optional
+        function to translate x2-axis to x-axis
+    autoscale : bool, optional
+        divide y values by maximum value
+    rngs : dict, optional
+        filter out data given {'x': [min, max], 'y': [min, max]}
+    limits : dict, optional
+        existing limits template argument not to update without overwrite
+    ticks : dict, optional
+        existing ticks template argument not to update without overwrite
+    logx : bool, optional
+        logscale x values
+    logy : bool, optional
+        logscale y values
+    logz : bool, optional
+        logscale z values (actually changes data appropriately)
+    xscale : float, optional
+        scale x values by this number
+    yscale : float, optional
+        scale y values by this number
+    zscale : float, optional
+        scale y values by this number
+    x2scale : float, optional
+        scale x2 values by this number
+    linestyle : bool, optional
+        use lines if true or markers if false
+
+    """
+    args = {}
     (limits, ticks, xs, data) = mkplot_gen(
-        xs, data, autoscale, rngs, limits, ticks, fun, ifun)
+        xs, data, autoscale, rngs, limits, ticks, logx, logy, fun, ifun,
+        xscale, yscale, x2scale)
+    if len(xs.shape) < 2:
+        xs = xs.reshape((-1, 1))
+    if isinstance(legendorzs[0], Number) and zlabel is not None:
+        zs = np.atleast_1d(legendorzs)
+        (t_ticks, t_limits) = mkplot_axis('z', zs*zscale, log=logz)
+        ticks = {**t_ticks, **ticks}
+        limits = {**t_limits, **limits}
+        if logz:
+            limits['zmin'] = np.log10(limits['zmin'])
+            limits['zmax'] = np.log10(limits['zmax'])
+            args['zs'] = np.log10(zs*zscale)
+        else:
+            args['zs'] = zs
+    else:
+        args['legend'] = legendorzs
+    args['axistype'] = "axis"
+    if logx and logy:
+        args['axistype'] = "loglogaxis"
+    elif logx:
+        args['axistype'] = "semilogxaxis"
+    elif logy:
+        args['axistype'] = "semilogyaxis"
+    args['multiplex'] = (xs.shape[0] < xs.size)
+    args['labels'] = make_labels(xlabel, xsymbol, xunit,
+                                 ylabel, ysymbol, yunit,
+                                 x2unit,
+                                 zlabel, zsymbol, zunit)
+    if title is not None:
+        args['title'] = title
+    args['limits'] = limits
+    args['ticks'] = ticks
+    args['tickcolor'] = "black"
+    args['linestyle'] = "no markers, solid" if linestyle else "only marks, marker=*"
     np.savetxt(pth+".csv", np.hstack((xs, data)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
-    f.write(
-        template.render(
-            limits=limits, ticks=ticks,
-            labels=make_labels(xlabel, xsymbol, xunit,
-                               ylabel, ysymbol, yunit,
-                               x2unit),
-            legend=legend))
+    f.write(template.render(args))
     f.close()
 
 
-def mkzplot(pth, xs, data, zs,
-            xlabel, xsymbol, xunit,
-            ylabel, ysymbol, yunit,
-            zlabel, zsymbol, zunit,
-            fun=None, ifun=None,
-            x2unit=None,
-            autoscale=False, rngs=None, limits=None, ticks=None):
-    (limits, ticks, lam, data) = mkplot_gen(
-        xs, data, autoscale, rngs, limits, ticks, fun, ifun)
-    (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
-    limits['zmin'] = zmin
-    limits['zmax'] = zmax
-    np.savetxt(pth+".csv", np.hstack((xs, data)), delimiter=',')
-    template = texenv.get_template('temp.tex')
+def mklamplot(pth, lam, data, legendorzs,
+              xlabel="Wavelength", xsymbol=None, xunit="\\nm",
+              ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
+              x2unit="\\eV",
+              autoscale=True,
+              rngs=None, limits=None, ticks=None,
+              logx=False, logy=False, logz=False,
+              xscale=1e9, x2scale=1., linestyle=True):
+    """
+    Shortcut for wavelength data
+
+    pth : str
+        path without file extensions to write to
+    lam : {(N,), (N,M)} array_like
+        wavelenth axis values
+    data : (N,M) array_like
+        y for lam points
+    legendorzs : (M,) array_like
+        legend (node text) for each addplot or if numeric creates meshplot type
+    xlabel : str, optional
+        x-axis label text
+    xsymbol : str, optional
+        x-axis label symbol (in math environment)
+    xunit : str, optional
+        x-axis siunitx style units
+    ylabel : str, optional
+        y-axis label text
+    ysymbol : str, optional
+        y-axis label symbol (in math environment)
+    yunit : str, optional
+        y-axis siunitx style units
+    x2unit : str, optional
+        x2-axis siunitx style units
+    autoscale : bool, optional
+        divide y values by maximum value
+    rngs : dict, optional
+        filter out data given {'x': [min, max], 'y': [min, max]}
+    limits : dict, optional
+        existing limits template argument not to update without overwrite
+    ticks : dict, optional
+        existing ticks template argument not to update without overwrite
+    logx : bool, optional
+        logscale x values
+    logy : bool, optional
+        logscale y values
+    logz : bool, optional
+        logscale z values (actually changes data appropriately)
+    xscale : float, optional
+        scale x values by this number
+    yscale : float, optional
+        scale y values by this number
+    zscale : float, optional
+        scale y values by this number
+    linestyle : bool, optional
+        use lines if true or markers if false
+
+    """
+    mkplot(pth, lam, data, legendorzs,
+           xlabel, xsymbol, xunit,
+           ylabel, ysymbol, yunit,
+           zlabel=None, zsymbol=None, zunit=None,
+           fun=elam, ifun=elam,
+           x2unit=x2unit,
+           autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
+           logx=logx, logy=logy, logz=logz,
+           xscale=xscale, x2scale=x2scale, linestyle=linestyle)
+
+
+def mkEplot(pth, es, data, legendorzs,
+            xlabel="Photon Energy", xsymbol=None, xunit="\\eV",
+            ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
+            x2unit="\\nm",
+            autoscale=True,
+            rngs=None, limits=None, ticks=None,
+            logx=False, logy=False, logz=False,
+            xscale=1., x2scale=1e9, linestyle=True):
+    """
+    Shortcut for wavelength data
+
+    pth : str
+        path without file extensions to write to
+    es : {(N,), (N,M)} array_like
+        energy data in eV
+    data : (N,M) array_like
+        y for lam points
+    legendorzs : (M,) array_like
+        legend (node text) for each addplot or if numeric creates meshplot type
+    xlabel : str, optional
+        x-axis label text
+    xsymbol : str, optional
+        x-axis label symbol (in math environment)
+    xunit : str, optional
+        x-axis siunitx style units
+    ylabel : str, optional
+        y-axis label text
+    ysymbol : str, optional
+        y-axis label symbol (in math environment)
+    yunit : str, optional
+        y-axis siunitx style units
+    x2unit : str, optional
+        x2-axis siunitx style units
+    autoscale : bool, optional
+        divide y values by maximum value
+    rngs : dict, optional
+        filter out data given {'x': [min, max], 'y': [min, max]}
+    limits : dict, optional
+        existing limits template argument not to update without overwrite
+    ticks : dict, optional
+        existing ticks template argument not to update without overwrite
+    logx : bool, optional
+        logscale x values
+    logy : bool, optional
+        logscale y values
+    logz : bool, optional
+        logscale z values (actually changes data appropriately)
+    xscale : float, optional
+        scale x values by this number
+    yscale : float, optional
+        scale y values by this number
+    zscale : float, optional
+        scale y values by this number
+    linestyle : bool, optional
+        use lines if true or markers if false
+
+    """
+    mkplot(pth, es, data, legendorzs,
+           xlabel, xsymbol, xunit,
+           ylabel, ysymbol, yunit,
+           zlabel=None, zsymbol=None, zunit=None,
+           fun=elam, ifun=elam,
+           x2unit=x2unit,
+           autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
+           logx=logx, logy=logy, logz=logz,
+           xscale=xscale, x2scale=x2scale, linestyle=linestyle)
+
+
+def mkcolorplot(pth, xs, ys, zs,
+                xlabel, xsymbol, xunit,
+                ylabel, ysymbol, yunit,
+                zlabel, zsymbol, zunit,
+                title=None,
+                fun=None, ifun=None,
+                x2unit=None,
+                autoscale=False, limits={}, ticks={},
+                logx=False, logy=False, logz=False,
+                xscale=1., yscale=1., zscale=1., x2scale=1.,
+                linestyle=True):
+    """
+    Makecolorplot
+
+    Parameters
+    ----------
+    pth : str
+        path without file extensions to write to
+    xs : {(N,), (N,M)} array_like
+        x axis values
+    data : (N,M) array_like
+        y for xs points
+    legendorzs : (M,) array_like
+        legend (node text) for each addplot or if numeric creates meshplot type
+    xlabel : str
+        x-axis label text
+    xsymbol : str
+        x-axis label symbol (in math environment)
+    xunit : str
+        x-axis siunitx style units
+    ylabel : str
+        y-axis label text
+    ysymbol : str
+        y-axis label symbol (in math environment)
+    yunit : str
+        y-axis siunitx style units
+    zlabel : str, optional
+        z-axis label text
+    zsymbol : str, optional
+        z-axis label symbol (in math environment)
+    zunit : str, optional
+        z-axis siunitx style units
+    title : str, optional
+        title for plot
+    fun : callable, optional
+        function to translate x-axis to x2 axis
+    ifun : callable,  optional
+        function to translate x2-axis to x-axis
+    autoscale : bool, optional
+        divide y values by maximum value
+    rngs : dict, optional
+        filter out data given {'x': [min, max], 'y': [min, max]}
+    limits : dict, optional
+        existing limits template argument not to update without overwrite
+    ticks : dict, optional
+        existing ticks template argument not to update without overwrite
+    logx : bool, optional
+        logscale x values
+    logy : bool, optional
+        logscale y values
+    logz : bool, optional
+        logscale z values (actually changes data appropriately)
+    xscale : float, optional
+        scale x values by this number
+    yscale : float, optional
+        scale y values by this number
+    zscale : float, optional
+        scale y values by this number
+    x2scale : float, optional
+        scale x2 values by this number
+    linestyle : bool, optional
+        use lines if true or markers if false
+
+    """
+    args = {}
+
+    t_limits = {'xmin': np.nanmin(xs*xscale), 'xmax': np.nanmax(xs*xscale),
+                'ymin': np.nanmin(ys*yscale), 'ymax': np.nanmax(ys*yscale)}
+    limits = {**t_limits, **limits}
+    xlims = np.array([limits['xmin'], limits['xmax']])
+    ylims = np.array([limits['ymin'], limits['ymax']])
+    if logz:
+        t_ticks, t_limits = mkplot_axis(
+            'z', zs*zscale, log=True, ifun=lambda x: np.log10(x))
+    else:
+        t_ticks, t_limits = mkplot_axis('z', zs*zscale, log=False, minor=0)
+    ticks = {**t_ticks, **ticks}
+    limits = {**t_limits, **limits}
+    if logz:
+        limits['zmin'] = np.log10(limits['zmin'])
+        limits['zmax'] = np.log10(limits['zmax'])
+
+    t_ticks = mkplot_axis('x', xlims, log=logx, inner=True)[0]
+    ticks = {**t_ticks, **ticks}
+    if fun is not None:
+        t_ticks = mkplot_axis(
+            'x2', x2scale*fun(xlims/xscale),
+            ifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)[0]
+        ticks = {**t_ticks, **ticks}
+    t_ticks = mkplot_axis('y', ylims, log=logy, inner=True)[0]
+    ticks = {**t_ticks, **ticks}
+    args['axistype'] = "axis"
+    if logx and logy:
+        args['axistype'] = "loglogaxis"
+    elif logx:
+        args['axistype'] = "semilogxaxis"
+    elif logy:
+        args['axistype'] = "semilogyaxis"
+    args['labels'] = make_labels(xlabel, xsymbol, xunit,
+                                 ylabel, ysymbol, yunit,
+                                 x2unit,
+                                 zlabel, zsymbol, zunit)
+    if title is not None:
+        args['title'] = title
+    args['limits'] = limits
+    args['ticks'] = ticks
+    args['tickcolor'] = "white"
+    args['image'] = True
+    plt.imsave(pth+".png", zs, vmin=limits['zmin'], vmax=limits['zmax'],
+               origin='lower', cmap='viridis')
+    template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
-    f.write(
-        template.render(
-            limits=limits, ticks=ticks,
-            zs=zs,
-            labels=make_labels(xlabel, xsymbol, xunit,
-                               ylabel, ysymbol, yunit,
-                               x2unit, zlabel, zsymbol, zunit)))
-    f.close()
-
-
-def mkEzplot(pth, E, data, zs, autoscale=True, labels=default_Ezlabels(),
-             rngs=None, limits=None, ticks=None):
-    (limits, ticks, E, data) = mkplot_gen(
-        E, data, autoscale, rngs, limits, ticks,
-        lambda x: elam(x)*1e9, lambda x: elam(x*1e-9))
-    (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
-    limits['zmin'] = zmin
-    limits['zmax'] = zmax
-    np.savetxt(pth+".csv", np.hstack((E, data)), delimiter=',')
-    template = texenv.get_template('temp.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(limits=limits,
-                        ticks=ticks, labels=labels, zs=zs))
-    f.close()
-
-
-def mkzdecay(pth, x, data, zs, fit, autoscale=False,
-             labels={'xlabel': {'text': 'x'}, 'ylabel': {'text': 'y'}},
-             rngs=None, limits=None, ticks=None):
-    if (rngs is not None):
-        if (len(x.shape) > 1 and x.shape[1] > 1):
-            (x, data) = range_filter_2d(x, data, rngs)
-            print("True")
-        else:
-            (x, data) = range_filter(x, data, rngs)
-            print("False")
-    if (autoscale):
-        data = data / np.nanmax(data, axis=0)
-    if (limits is None or ticks is None):
-        limits = {}
-        ticks = {}
-        (t_ticks, t_limits) = mkplot_axis('x', x)
-        ticks.update(t_ticks)
-        limits.update(t_limits)
-        (ymin, ymax, lymin, lymax) = data_log_ranges(data)
-        limits.update({'ymin': ymin, 'ymax': ymax})
-        ticks['ytickten'] = '%i,%i,...,%i' % (lymin, lymin+1, lymax+1)
-        (zmin, zmax, zjmin, zjmax, zstep, zstepm) = data_ranges(zs, 7, 7)
-        limits['zmin'] = zmin
-        limits['zmax'] = zmax
-    print((x.shape, data.shape))
-    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
-    template = texenv.get_template('decayPlot.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(multiplex=(x.shape[1] > 1), limits=limits,
-                        ticks=ticks, labels=labels, fit=fit, zs=zs))
-    f.close()
-
-
-def int_plot_labels(xlabel, xsymbol, xunit, xhighlight=None, hltxt=None,
-                    ypos=0.5):
-    lbl = {
-        'xlabel': {
-            'text': xlabel,
-            'symbol': xsymbol,
-            'units': xunit
-        },
-        'ylabel': {
-            'text': 'Integrated Photon Flux',
-            'units': '\\arb'
-        }
-    }
-    if (xhighlight is not None):
-        lbl['xhighlight'] = {}
-        lbl['xhighlight']['start'] = xhighlight[0]
-        lbl['xhighlight']['end'] = xhighlight[1]
-        if (hltxt is not None):
-            lbl['xhighlight']['lbltxt'] = hltxt
-            lbl['xhighlight']['lblanch'] = [(0.2 *
-                                             (xhighlight[1] - xhighlight[0])
-                                             + xhighlight[0]),
-                                            ypos]
-    return lbl
-
-
-def mkintplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
-              rngs=None, limits=None, ticks=None):
-    if (rngs is not None):
-        (x, data) = range_filter(x, data, rngs)
-    if (autoscale):
-        data = data / np.nanmax(data)
-    if (limits is None or ticks is None):
-        limits = {}
-        ticks = {}
-        (t_ticks, t_limits) = mkplot_axis('x', x)
-        ticks.update(t_ticks)
-        limits.update(t_limits)
-        (t_ticks, t_limits) = mkplot_axis('y', data)
-        ticks.update(t_ticks)
-        limits.update(t_limits)
-    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
-    template = texenv.get_template('int_flux_over.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(limits=limits,
-                        ticks=ticks, labels=labels, legend=legend))
-    f.close()
-
-
-def mkloglogplot(pth, x, data, legend, autoscale=True, labels=default_labels(),
-                 rngs=None, limits=None, ticks=None):
-    if (rngs is not None):
-        (x, data) = range_filter(x, data, rngs)
-    if (autoscale):
-        data = data / np.nanmax(data, axis=0)
-    if (limits is None or ticks is None):
-        (xmin, xmax, lxmin, lxmax) = data_log_ranges(x)
-        (ymin, ymax, lymin, lymax) = data_log_ranges(data)
-        limits = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
-        ticks = {}
-        ticks['xtickten'] = '%i,%i,...,%i' % (lxmin, lxmin+1, lxmax+1)
-        print((lymin, lymin+1, lymax+1))
-        ticks['ytickten'] = '%i,%i,...,%i' % (lymin, lymin+1, lymax+1)
-    np.savetxt(pth+".csv", np.hstack((x, data)), delimiter=',')
-    template = texenv.get_template('loglogplot.tex')
-    f = open(pth+".tex", 'w')
-    f.write(
-        template.render(multiplex=(x.shape[1] > 1), limits=limits,
-                        ticks=ticks, labels=labels, legend=legend))
+    f.write(template.render(args))
     f.close()
 
 
