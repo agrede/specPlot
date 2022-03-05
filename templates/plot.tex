@@ -184,6 +184,7 @@
       ((* if ticks['zminor'] is defined *))
       minor ytick={((( ticks['zminor'] )))},%
       ((* endif *))
+      ((* if labels['zlabel'] is defined *))
       ylabel={%
         ((( labels['zlabel']['text'] ))) %
         ((* if labels['zlabel']['symbol'] is defined *))
@@ -201,12 +202,14 @@
           \right]\)%
         ((* endif *))
       },
+      ((* endif *))
       label style={font=\normalsize},
       tick label style={font=\small}
     }
     ((* endif *))
     ((* endif *))
     ]
+    ((* if labels['zlabel'] is defined *))
     ((* if labels['zlabel']['text'] is defined *))
     % Z-axis : ((( labels['zlabel']['text'] )))
     ((* endif *))
@@ -218,6 +221,7 @@
     ((* endif *))
     ((* if labels['zlabel']['mult'] is defined *))
     % Z-mult : ((( labels['zlabel']['mult'] )))
+    ((* endif *))
     ((* endif *))
 
     ((* if legend is defined *))

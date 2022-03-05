@@ -599,8 +599,8 @@ def mkplot(pth, xs, data, legendorzs,
     args['limits'] = limits
     args['ticks'] = ticks
     args['tickcolor'] = "black"
-    args['linestyle'] = "no markers, solid" if linestyle else "only marks, marker=*"
-    np.savetxt(pth+".csv", np.hstack((xs, data)), delimiter=',')
+    args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark=*"
+    np.savetxt(pth+".csv", np.hstack((xs*xscale, data*yscale)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
     f.write(template.render(args))
@@ -680,7 +680,7 @@ def mkEplot(pth, es, data, legendorzs,
             ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
             x2unit="\\nm",
             autoscale=True,
-            rngs=None, limits=None, ticks=None,
+            rngs=None, limits={}, ticks={},
             logx=False, logy=False, logz=False,
             xscale=1., x2scale=1e9, linestyle=True):
     """
