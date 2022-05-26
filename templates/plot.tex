@@ -58,6 +58,9 @@
     ((* if ticks['x2major'] is defined *))
     axis x line*=bottom,
     ((* endif *))
+    ((* if ticks['y2major'] is defined *))
+    axis y line*=left,
+    ((* endif *))
     ((* if title is defined *))
     title={((( title )))},
     ((* endif *))
@@ -252,9 +255,13 @@
     \addplot graphics[xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] )))] {\imgpth};
     ((* endif *))
   \end{((( axistype )))}
-  ((* if ticks['x2major'] is defined *))
+  ((* if ticks['x2major'] is defined or ticks['y2major'] is defined *))
   \begin{((( axistype )))}[
+    ((* if ticks['x2major'] is defined *))
     axis x line*=top,
+    ((* else *))
+    hide x axis,
+    ((* endif *))
     ((* if labels['x2label']['units'] is defined *))
     xtick = {((( ticks['x2major'][:-1]|join(',') )))},%
     xticklabels = {((( ticks['x2labels'][:-1]|join(',') )))},%
@@ -271,7 +278,27 @@
     ((* if ticks['x2minor'] is defined *))
     minor xtick={((( ticks['x2minor']|join(',') )))},%
     ((* endif *))
-    hide y axis]
+    ((* if ticks['y2major'] is defined *))
+    axis y line*=right,
+    ((* else *))
+    hide y axis,
+    ((* endif *))
+    ((* if labels['y2label']['units'] is defined *))
+    ytick = {((( ticks['y2major'][:-1]|join(',') )))},%
+    yticklabels = {((( ticks['y2labels'][:-1]|join(',') )))},%
+    extra y ticks = {((( ticks['y2major'][-1] )))},%
+    extra y tick labels = {\SI{((( ticks['y2labels'][-1] )))}{(((
+        labels['y2label']['units'] )))}},
+    % extra y tick style={
+    %   yticklabel style={xshift=0ex, anchor=south},
+    % },
+    ((* else *))
+    ytick = {((( ticks['y2major']|join(',') )))},%
+    yticklabels = {((( ticks['y2labels']|join(',') )))},%
+    ((* endif *))
+    ((* if ticks['y2minor'] is defined *))
+    minor ytick={((( ticks['y2minor']|join(',') )))},%
+    ((* endif *))]
   \end{((( axistype )))}
   ((* endif *))
 \end{tikzpicture}

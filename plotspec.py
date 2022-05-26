@@ -23,6 +23,28 @@ LATEX_SUBS = (
     (regex.compile(r'\.\.\.+'), r'\\ldots'),
 )
 
+UNIT_SCALES: {
+    'yocto': -24,
+    'zepto': -21,
+    'atto': -18,
+    'femto': -15,
+    'pico': -12,
+    'nano': -9,
+    'micro': -6,
+    'milli': -3,
+    'centi': -2,
+    'deci': -1,
+    'deca': 1,
+    'hecto': 2,
+    'kilo': 3,
+    'mega': 6,
+    'giga': 9,
+    'tera': 12,
+    'peta': 15,
+    'exa': 18,
+    'zetta': 21,
+    'yotta': 24}
+
 
 def escape_tex(value):
     newval = value
@@ -249,7 +271,7 @@ def make_gen_label(pfx, label, symbol, unit):
 
 
 def make_labels(xlabel, xsymbol, xunit,
-                ylabel, ysymbol, yunit, x2unit,
+                ylabel, ysymbol, yunit, x2unit=None, y2unit=None,
                 zlabel=None, zsymbol=None, zunit=None):
     labels = {}
     labels.update(make_gen_label('x', xlabel, xsymbol, xunit))
@@ -258,6 +280,8 @@ def make_labels(xlabel, xsymbol, xunit,
         labels.update(make_gen_label('z', zlabel, zsymbol, zunit))
     if x2unit:
         labels['x2label'] = {'text': "", 'units': x2unit}
+    if y2unit:
+        labels['y2label'] = {'text': "", 'units': y2unit}
     return labels
 
 
@@ -425,8 +449,8 @@ def mkplot_axis(
 
 def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
                logx=False, logy=False,
-               fun=None, ifun=None,
-               xscale=1., yscale=1., x2scale=1.):
+               xfun=None, xifun=None, yfun=None, yifun=None,
+               xscale=1., yscale=1., x2scale=1., y2scale=1.):
     """
     Filter and setup limits and ticks template arguments
 
@@ -448,16 +472,22 @@ def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
         logscale x values
     logy : bool, optional
         logscale y values
-    fun : callable, optional
+    xfun : callable, optional
         function to translate x-axis to x2 axis
-    ifun : callable,  optional
+    xifun : callable,  optional
         function to translate x2-axis to x-axis
+    yfun : callable, optional
+        function to translate y-axis to y2 axis
+    yifun : callable,  optional
+        function to translate y2-axis to y-axis
     xscale : float, optional
         scale x values by this number
     yscale : float, optional
         scale y values by this number
     x2scale : float, optional
         scale x2 values by this number
+    y2scale : float, optional
+        scale y2 values by this number
 
     Returns
     -------
@@ -477,15 +507,21 @@ def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
     (t_ticks, t_limits) = mkplot_axis('x', xs*xscale, log=logx)
     ticks = {**t_ticks, **ticks}
     limits = {**t_limits, **limits}
-    if fun is not None:
+    if xfun is not None:
         (t_ticks, t_limits) = mkplot_axis(
             'x2',
-            x2scale*fun(np.array([limits['xmin'], limits['xmax']])/xscale),
-            ifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)
+            x2scale*xfun(np.array([limits['xmin'], limits['xmax']])/xscale),
+            xifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)
         ticks = {**t_ticks, **ticks}
     (t_ticks, t_limits) = mkplot_axis('y', data*yscale, log=logy)
     ticks = {**t_ticks, **ticks}
     limits = {**t_limits, **limits}
+    if yfun is not None:
+        (t_ticks, t_limits) = mkplot_axis(
+            'y2',
+            y2scale*yfun(np.array([limits['ymin'], limits['ymax']])/yscale),
+            yifun, log=logy, inner=True, xscale=yscale, x2scale=y2scale)
+        ticks = {**t_ticks, **ticks}
     return (limits, ticks, xs, data)
 
 
@@ -494,11 +530,12 @@ def mkplot(pth, xs, data, legendorzs,
            ylabel, ysymbol, yunit,
            zlabel=None, zsymbol=None, zunit=None,
            title=None,
-           fun=None, ifun=None,
-           x2unit=None,
+           xfun=None, xifun=None, x2unit=None,
+           yfun=None, yifun=None, y2unit=None,
            autoscale=False, rngs=None, limits={}, ticks={},
            logx=False, logy=False, logz=False,
-           xscale=1., yscale=1., zscale=1., x2scale=1.,
+           xscale=1., yscale=1., zscale=1.,
+           x2scale=1., y2scale=1.,
            linestyle=True):
     """
     Makeplot
@@ -533,10 +570,18 @@ def mkplot(pth, xs, data, legendorzs,
         z-axis siunitx style units
     title : str, optional
         Title for plot
-    fun : callable, optional
+    xfun : callable, optional
         function to translate x-axis to x2 axis
-    ifun : callable,  optional
+    xifun : callable,  optional
         function to translate x2-axis to x-axis
+    x2unit : str, optional
+        upper x unit
+    yfun : callable, optional
+        function to translate y-axis to y2 axis
+    yifun : callable,  optional
+        function to translate y2-axis to y-axis
+    y2unit : str, optional
+        upper y unit
     autoscale : bool, optional
         divide y values by maximum value
     rngs : dict, optional
@@ -559,14 +604,16 @@ def mkplot(pth, xs, data, legendorzs,
         scale y values by this number
     x2scale : float, optional
         scale x2 values by this number
+    y2scale : float, optional
+        scale y2 values by this number
     linestyle : bool, optional
         use lines if true or markers if false
 
     """
     args = {}
     (limits, ticks, xs, data) = mkplot_gen(
-        xs, data, autoscale, rngs, limits, ticks, logx, logy, fun, ifun,
-        xscale, yscale, x2scale)
+        xs, data, autoscale, rngs, limits, ticks, logx, logy, xfun, xifun,
+        yfun, yifun, xscale, yscale, x2scale, y2scale)
     if len(xs.shape) < 2:
         xs = xs.reshape((-1, 1))
     if isinstance(legendorzs[0], Number) and zlabel is not None:
@@ -748,11 +795,12 @@ def mkcolorplot(pth, xs, ys, zs,
                 ylabel, ysymbol, yunit,
                 zlabel, zsymbol, zunit,
                 title=None,
-                fun=None, ifun=None,
-                x2unit=None,
+                xfun=None, xifun=None, x2unit=None,
+                yfun=None, yifun=None, y2unit=None,
                 autoscale=False, limits={}, ticks={},
                 logx=False, logy=False, logz=False,
-                xscale=1., yscale=1., zscale=1., x2scale=1.,
+                xscale=1., yscale=1., zscale=1.,
+                x2scale=1., y2scale=1.,
                 linestyle=True):
     """
     Makecolorplot
@@ -787,10 +835,18 @@ def mkcolorplot(pth, xs, ys, zs,
         z-axis siunitx style units
     title : str, optional
         title for plot
-    fun : callable, optional
+    xfun : callable, optional
         function to translate x-axis to x2 axis
-    ifun : callable,  optional
+    xifun : callable,  optional
         function to translate x2-axis to x-axis
+    x2unit : str
+        x2-axis siunitx style units
+    yfun : callable, optional
+        function to translate y-axis to y2 axis
+    yifun : callable,  optional
+        function to translate y2-axis to y-axis
+    y2unit : str
+        y2-axis siunitx style units
     autoscale : bool, optional
         divide y values by maximum value
     rngs : dict, optional
@@ -837,13 +893,18 @@ def mkcolorplot(pth, xs, ys, zs,
 
     t_ticks = mkplot_axis('x', xlims, log=logx, inner=True)[0]
     ticks = {**t_ticks, **ticks}
-    if fun is not None:
+    if xfun is not None:
         t_ticks = mkplot_axis(
-            'x2', x2scale*fun(xlims/xscale),
-            ifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)[0]
+            'x2', x2scale*xfun(xlims/xscale),
+            xifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)[0]
         ticks = {**t_ticks, **ticks}
     t_ticks = mkplot_axis('y', ylims, log=logy, inner=True)[0]
     ticks = {**t_ticks, **ticks}
+    if yfun is not None:
+        t_ticks = mkplot_axis(
+            'y2', y2scale*yfun(ylims/yscale),
+            yifun, log=logy, inner=True, xscale=yscale, x2scale=y2scale)[0]
+        ticks = {**t_ticks, **ticks}
     args['axistype'] = "axis"
     if logx and logy:
         args['axistype'] = "loglogaxis"
@@ -853,7 +914,7 @@ def mkcolorplot(pth, xs, ys, zs,
         args['axistype'] = "semilogyaxis"
     args['labels'] = make_labels(xlabel, xsymbol, xunit,
                                  ylabel, ysymbol, yunit,
-                                 x2unit,
+                                 x2unit, y2unit,
                                  zlabel, zsymbol, zunit)
     if title is not None:
         args['title'] = title
