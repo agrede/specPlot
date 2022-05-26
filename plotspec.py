@@ -614,6 +614,7 @@ def mkplot(pth, xs, data, legendorzs,
     (limits, ticks, xs, data) = mkplot_gen(
         xs, data, autoscale, rngs, limits, ticks, logx, logy, xfun, xifun,
         yfun, yifun, xscale, yscale, x2scale, y2scale)
+    args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark=*"
     if len(xs.shape) < 2:
         xs = xs.reshape((-1, 1))
     if isinstance(legendorzs[0], Number) and zlabel is not None:
@@ -627,6 +628,8 @@ def mkplot(pth, xs, data, legendorzs,
             args['zs'] = np.log10(zs*zscale)
         else:
             args['zs'] = zs
+        if not linestyle:
+            args['linestyle'] = "scatter, only marks, mark=*, scatter/use mapped color={draw=mapped color, fill=mapped color}"
     else:
         args['legend'] = legendorzs
     args['axistype'] = "axis"
@@ -646,7 +649,6 @@ def mkplot(pth, xs, data, legendorzs,
     args['limits'] = limits
     args['ticks'] = ticks
     args['tickcolor'] = "black"
-    args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark=*"
     np.savetxt(pth+".csv", np.hstack((xs*xscale, data*yscale)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
