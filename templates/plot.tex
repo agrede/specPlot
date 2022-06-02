@@ -20,6 +20,7 @@
 \DeclareSIUnit\decade{decade}
 \DeclareSIUnit\arb{a.u.}
 \DeclareSIUnit\dBm{dBm}
+\DeclareSIUnit\Aph{A_{ph}}
 
 \pgfplotsset{
   compat=newest,
@@ -37,7 +38,11 @@
     axis on top,
     scale only axis
   },
+  ((* if thickstyle *))
   every axis plot/.append style={thick}
+  ((* else *))
+  every axis plot/.append style={thin, mark size=1.2pt}
+  ((* endif *))
 }
 
 % Generated using
@@ -157,7 +162,7 @@
       font={\footnotesize},
       cells={anchor=west},
       draw=none},
-    legend pos = north east,
+    legend pos = ((( legendPosition ))),
     ((* if 'zmin' in limits *))
     colormap/viridis,
     point meta min=((( limits['zmin'] ))),
@@ -232,14 +237,14 @@
 
     ((* if multiplex *))
     \addplot+[((( linestyle )))]
-    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth}
-    node[pos=0.5, above] {\footnotesize ((( leg )))};
+    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth}((( '' if useNodes else ';' )))
+    ((( '' if useNodes else '%' )))node[pos=0.5, above] {\footnotesize ((( leg )))};
     ((* else *))
     \addplot+[((( linestyle )))]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth}
-    node[pos=0.5, above] {\footnotesize ((( leg )))};
+    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth}((( '' if useNodes else ';' )))
+    ((( '' if useNodes else '%' )))node[pos=0.5, above] {\footnotesize ((( leg )))};
     ((* endif *))
-    % \addlegendentry{((( leg )))}
+    ((( '' if useLegend else '%' )))\addlegendentry{((( leg )))}
     ((* endfor *))
     ((* elif zs is defined *))
     ((* for z in zs *))
@@ -254,14 +259,12 @@
     ((* elif image is defined *))
     \addplot graphics[xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] )))] {\imgpth};
     ((* endif *))
+    ((( additional )))
   \end{((( axistype )))}
   ((* if ticks['x2major'] is defined or ticks['y2major'] is defined *))
   \begin{((( axistype )))}[
     ((* if ticks['x2major'] is defined *))
     axis x line*=top,
-    ((* else *))
-    hide x axis,
-    ((* endif *))
     ((* if labels['x2label']['units'] is defined *))
     xtick = {((( ticks['x2major'][:-1]|join(',') )))},%
     xticklabels = {((( ticks['x2labels'][:-1]|join(',') )))},%
@@ -269,8 +272,11 @@
     extra x tick labels = {\SI{((( ticks['x2labels'][-1] )))}{(((
         labels['x2label']['units'] )))}},
     extra x tick style={
-      xticklabel style={yshift=0ex, anchor=south},
+      xticklabel style={yshift=((( x2shift )))ex, anchor=south},
     },
+    ((* else *))
+    hide x axis,
+    ((* endif *))
     ((* else *))
     xtick = {((( ticks['x2major']|join(',') )))},%
     xticklabels = {((( ticks['x2labels']|join(',') )))},%
@@ -280,9 +286,6 @@
     ((* endif *))
     ((* if ticks['y2major'] is defined *))
     axis y line*=right,
-    ((* else *))
-    hide y axis,
-    ((* endif *))
     ((* if labels['y2label']['units'] is defined *))
     ytick = {((( ticks['y2major'][:-1]|join(',') )))},%
     yticklabels = {((( ticks['y2labels'][:-1]|join(',') )))},%
@@ -298,6 +301,9 @@
     ((* endif *))
     ((* if ticks['y2minor'] is defined *))
     minor ytick={((( ticks['y2minor']|join(',') )))},%
+    ((* endif *))
+    ((* else *))
+    hide y axis,
     ((* endif *))]
   \end{((( axistype )))}
   ((* endif *))

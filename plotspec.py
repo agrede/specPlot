@@ -536,9 +536,11 @@ def mkplot(pth, xs, data, legendorzs,
            logx=False, logy=False, logz=False,
            xscale=1., yscale=1., zscale=1.,
            x2scale=1., y2scale=1.,
-           linestyle=True):
+           linestyle=True, marker="*", additional="",
+           thickstyle=True, x2shift=0.0, useLegend=False, useNodes=True,
+           legendPosition="north west"):
     """
-    Makeplot
+    Makeplot.
 
     Parameters
     ----------
@@ -608,13 +610,20 @@ def mkplot(pth, xs, data, legendorzs,
         scale y2 values by this number
     linestyle : bool, optional
         use lines if true or markers if false
-
+    marker : str, optional
+        marker to use if linestyle=false
+    additional: str, optional
+        additional string that will be added to the end
+    thickstyle: bool, optional
+        changes style from "thick" if true (default) to "thin, mark size=1.2pt"
+    x2shift: float, optional
+        adds yshift equal to x2shift em (for decenders)
     """
     args = {}
     (limits, ticks, xs, data) = mkplot_gen(
         xs, data, autoscale, rngs, limits, ticks, logx, logy, xfun, xifun,
         yfun, yifun, xscale, yscale, x2scale, y2scale)
-    args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark=*"
+    args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark="+marker
     if len(xs.shape) < 2:
         xs = xs.reshape((-1, 1))
     if isinstance(legendorzs[0], Number) and zlabel is not None:
@@ -629,7 +638,10 @@ def mkplot(pth, xs, data, legendorzs,
         else:
             args['zs'] = zs
         if not linestyle:
-            args['linestyle'] = "scatter, only marks, mark=*, scatter/use mapped color={draw=mapped color, fill=mapped color}"
+            args['linestyle'] = (
+                "scatter, only marks, mark=" + marker +
+                ", scatter/use mapped color=" +
+                "{draw=mapped color, fill=mapped color}")
     else:
         args['legend'] = legendorzs
     args['axistype'] = "axis"
@@ -642,13 +654,19 @@ def mkplot(pth, xs, data, legendorzs,
     args['multiplex'] = (xs.shape[0] < xs.size)
     args['labels'] = make_labels(xlabel, xsymbol, xunit,
                                  ylabel, ysymbol, yunit,
-                                 x2unit,
+                                 x2unit, y2unit,
                                  zlabel, zsymbol, zunit)
     if title is not None:
         args['title'] = title
     args['limits'] = limits
     args['ticks'] = ticks
     args['tickcolor'] = "black"
+    args['additional'] = additional
+    args['thickstyle'] = thickstyle
+    args['x2shift'] = x2shift
+    args['useLegend'] = useLegend
+    args['useNodes'] = useNodes
+    args['legendPosition'] = legendPosition
     np.savetxt(pth+".csv", np.hstack((xs*xscale, data*yscale)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
@@ -657,15 +675,17 @@ def mkplot(pth, xs, data, legendorzs,
 
 
 def mklamplot(pth, lam, data, legendorzs,
-              xlabel="Wavelength", xsymbol=None, xunit="\\nm",
+              xlabel="Wavelength", xsymbol=None, xunit=None,
               ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
-              x2unit="\\eV",
+              x2unit=None,
               autoscale=True,
               rngs=None, limits=None, ticks=None,
               logx=False, logy=False, logz=False,
-              xscale=1e9, x2scale=1., linestyle=True):
+              xscale=1e9, x2scale=1., linestyle=True,
+              marker="*", additional="",
+              thickstyle=True, x2shift=0.0, useLegend=False, useNodes=True):
     """
-    Shortcut for wavelength data
+    Shortcut for wavelength data.
 
     pth : str
         path without file extensions to write to
@@ -680,7 +700,7 @@ def mklamplot(pth, lam, data, legendorzs,
     xsymbol : str, optional
         x-axis label symbol (in math environment)
     xunit : str, optional
-        x-axis siunitx style units
+        x-axis siunitx style units (will use nm if xscale=1e9, um if 1e6)
     ylabel : str, optional
         y-axis label text
     ysymbol : str, optional
@@ -688,7 +708,7 @@ def mklamplot(pth, lam, data, legendorzs,
     yunit : str, optional
         y-axis siunitx style units
     x2unit : str, optional
-        x2-axis siunitx style units
+        x2-axis siunitx style units (will use eV if x2scale=1, meV if x2scale=1e3)
     autoscale : bool, optional
         divide y values by maximum value
     rngs : dict, optional
@@ -711,29 +731,46 @@ def mklamplot(pth, lam, data, legendorzs,
         scale y values by this number
     linestyle : bool, optional
         use lines if true or markers if false
+    marker : str, optional
+        marker to use if linestyle=false
+    additional: str, optional
+        additional string that will be added to the end
+    thickstyle: bool, optional
+        changes style from "thick" if true (default) to "thin, mark size=1.2pt"
+    x2shift: float, optional
+        adds yshift equal to x2shift em (for decenders)
 
     """
+    if xunit is None:
+        xunit = "\\um" if xscale==1e9 else "\\nm"
+    if x2unit is None:
+        x2unit = "\\meV" if x2scale==1e3 else "\\eV"
     mkplot(pth, lam, data, legendorzs,
            xlabel, xsymbol, xunit,
            ylabel, ysymbol, yunit,
            zlabel=None, zsymbol=None, zunit=None,
-           fun=elam, ifun=elam,
+           xfun=elam, xifun=elam,
            x2unit=x2unit,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
            logx=logx, logy=logy, logz=logz,
-           xscale=xscale, x2scale=x2scale, linestyle=linestyle)
+           xscale=xscale, x2scale=x2scale, linestyle=linestyle,
+           marker=marker, additional=additional,
+           thickstyle=thickstyle, x2shift=x2shift, useLegend=useLegend,
+           useNodes=useNodes)
 
 
 def mkEplot(pth, es, data, legendorzs,
-            xlabel="Photon Energy", xsymbol=None, xunit="\\eV",
+            xlabel="Photon Energy", xsymbol=None, xunit=None,
             ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
-            x2unit="\\nm",
+            x2unit=None,
             autoscale=True,
             rngs=None, limits={}, ticks={},
             logx=False, logy=False, logz=False,
-            xscale=1., x2scale=1e9, linestyle=True):
+            xscale=1., x2scale=1e9, linestyle=True,
+            marker="*", additional="",
+            thickstyle=True, x2shift=None, useLegend=False, useNodes=True):
     """
-    Shortcut for wavelength data
+    Shortcut for energy data.
 
     pth : str
         path without file extensions to write to
@@ -748,7 +785,7 @@ def mkEplot(pth, es, data, legendorzs,
     xsymbol : str, optional
         x-axis label symbol (in math environment)
     xunit : str, optional
-        x-axis siunitx style units
+        x-axis siunitx style units (will use eV if xscale=1, meV if x2scale=1e3)
     ylabel : str, optional
         y-axis label text
     ysymbol : str, optional
@@ -756,7 +793,7 @@ def mkEplot(pth, es, data, legendorzs,
     yunit : str, optional
         y-axis siunitx style units
     x2unit : str, optional
-        x2-axis siunitx style units
+        x2-axis siunitx style units (will use nm if x2scale=1e9, um if 1e6)
     autoscale : bool, optional
         divide y values by maximum value
     rngs : dict, optional
@@ -779,17 +816,34 @@ def mkEplot(pth, es, data, legendorzs,
         scale y values by this number
     linestyle : bool, optional
         use lines if true or markers if false
+    marker : str, optional
+        marker to use if linestyle=false
+    additional: str, optional
+        additional string that will be added to the end
+    thickstyle: bool, optional
+        changes style from "thick" if true (default) to "thin, mark size=1.2pt"
+    x2shift: float, optional
+        adds yshift equal to x2shift em (for decenders)
 
     """
+    if xunit is None:
+        xunit = "\\meV" if xscale==1e3 else "\\eV"
+    if x2unit is None:
+        x2unit = "\\um" if x2scale==1e9 else "\\nm"
+    if x2shift is None:
+        if x2scale == 1e6:
+            x2shift=-0.5
     mkplot(pth, es, data, legendorzs,
            xlabel, xsymbol, xunit,
            ylabel, ysymbol, yunit,
            zlabel=None, zsymbol=None, zunit=None,
-           fun=elam, ifun=elam,
+           xfun=elam, xifun=elam,
            x2unit=x2unit,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
            logx=logx, logy=logy, logz=logz,
-           xscale=xscale, x2scale=x2scale, linestyle=linestyle)
+           xscale=xscale, x2scale=x2scale, linestyle=linestyle,
+           marker=marker, additional=additional,
+           thickstyle=thickstyle, x2shift=x2shift, useLegend=useLegend, useNodes=useNodes)
 
 
 def mkcolorplot(pth, xs, ys, zs,
