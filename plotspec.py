@@ -51,7 +51,7 @@ ANCHORN = [
     "east", "north east", "north",
     "north west", "west", "south west",
     "south", "south east"]
-ANCHORS = np.atleast_3d([
+ANCHORS = np.array([
     [1., 0], [1, 1], [0, 1],
     [-1, 1], [-1, 0], [-1, -1],
     [0, -1], [1, -1]])
@@ -694,11 +694,11 @@ def mkplot(pth, xs, data, legendorzs,
     args['multiplex'] = (xs.shape[0] < xs.size)
     if findnodes or findnodeanchors or findlegend:
         xns = normalize_points(
-            xs,
+            xs*xscale,
             limits['xmin'], limits['xmax'])
-        if args['multiplex']:
+        if not args['multiplex']:
             xns *= np.ones((1, data.shape[1]))
-        yns = normalize_points(data, limits['ymin'], limits['ymax'])
+        yns = normalize_points(data*yscale, limits['ymin'], limits['ymax'])
         ps = np.dstack((xns, yns)).swapaxes(1, 2)
         if findnodes or findnodeanchors:
             N = ps.shape[0]
@@ -707,23 +707,23 @@ def mkplot(pth, xs, data, legendorzs,
             for m in range(M):
                 if findnodes:
                     n, d = furthest_point(
-                        ps[:, :, [m]], ps[:, :, np.arange(M) != m])
-                    plotlabels['pos_nodes'] = n/N
+                        ps[:, :, m], ps[:, :, np.arange(M) != m])
+                    plotlabels['pos_nodes'][m] = n/N
                     ds[m] = d
                 else:
                     n = int(plotlabels['pos_nodes'][m]*N)
                 if findnodeanchors:
-                    n = furthest_point(ps[[n], :, [m]]+ANCHORS*0.05, ps)[0]
-                    plotlabels['anch_nodes'][m] = ANCHORN[n]
+                    n2 = furthest_point(ps[n, :, m].reshape((1, 2))+ANCHORS*0.01, ps)[0]
+                    plotlabels['anch_nodes'][m] = np.roll(ANCHORN, 4)[n2]
             if findlegend and ds.min() > 0.05:
                 findlegend = False
                 plotlabels['show_nodes'] = True
-                plotlabels['show_legend'] = False
             elif findlegend:
                 plotlabels['show_legend'] = True
         if findlegend:
             n = quadrant_counts(ps).argmin()
             plotlabels['pos_legend'] = ANCHORN[1::2][n]
+    print(plotlabels)
     args['plotlabels'] = plotlabels
     args['axistype'] = "axis"
     if logx and logy:
@@ -1122,7 +1122,7 @@ def furthest_point(ps, qs):
     for k, p0 in enumerate(ps):
         if not np.all(np.isfinite(p0)):
             continue
-        d = np.nanmin(norm(qs-p0, axis=1))
+        d = np.nanmin(norm(qs-p0.reshape((1, 2, 1)), axis=1))
         if d > dmx:
             kmx = k
             dmx = d

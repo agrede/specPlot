@@ -238,8 +238,8 @@
 
     \addplot+[((( linestyle )))]
     table [x index=((( loop.index0 if multiplex else 0 ))), y index=((( loop.length + loop.index0 if multiplex else loop.index ))), col sep=comma]{\dtapth}((( '' if plotlabels['show_nodes'] else ';' )))
-    ((( '' if plotlabels['show_nodes'] else '%' )))node[pos=((( plotlabels['pos_nodes'][loop.index] ))), ((( plotlabels['anch_nodes'][loop.index] )))] {((( leg )))};
-    ((( '' if useLegend else '%' )))\addlegendentry{((( leg )))}
+    ((( '' if plotlabels['show_nodes'] else '%' )))node[pos=((( plotlabels['pos_nodes'][loop.index0] ))), anchor=((( plotlabels['anch_nodes'][loop.index0] )))] {((( leg )))};
+    ((( '' if plotlabels['show_legend'] else '%' )))\addlegendentry{((( leg )))}
     ((* endfor *))
     ((* elif zs is defined *))
     ((* for z in zs *))
