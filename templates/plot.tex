@@ -39,9 +39,9 @@
     scale only axis
   },
   ((* if thickstyle *))
-  every axis plot/.append style={thick}
+  every axis plot/.append style={thick, font=\footnotesize}
   ((* else *))
-  every axis plot/.append style={thin, mark size=1.2pt}
+  every axis plot/.append style={thin, mark size=1.2pt, font=\footnotesize}
   ((* endif *))
 }
 
@@ -162,7 +162,7 @@
       font={\footnotesize},
       cells={anchor=west},
       draw=none},
-    legend pos = ((( legendPosition ))),
+    legend pos = ((( plotlabels['pos_legend'] ))),
     ((* if 'zmin' in limits *))
     colormap/viridis,
     point meta min=((( limits['zmin'] ))),
@@ -235,26 +235,15 @@
     ((* if legend is defined *))
     ((* for leg in legend *))
 
-    ((* if multiplex *))
     \addplot+[((( linestyle )))]
-    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth}((( '' if useNodes else ';' )))
-    ((( '' if useNodes else '%' )))node[pos=0.5, above] {\footnotesize ((( leg )))};
-    ((* else *))
-    \addplot+[((( linestyle )))]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth}((( '' if useNodes else ';' )))
-    ((( '' if useNodes else '%' )))node[pos=0.5, above] {\footnotesize ((( leg )))};
-    ((* endif *))
+    table [x index=((( loop.index0 if multiplex else 0 ))), y index=((( loop.length + loop.index0 if multiplex else loop.index ))), col sep=comma]{\dtapth}((( '' if plotlabels['show_nodes'] else ';' )))
+    ((( '' if plotlabels['show_nodes'] else '%' )))node[pos=((( plotlabels['pos_nodes'][loop.index] ))), ((( plotlabels['anch_nodes'][loop.index] )))] {((( leg )))};
     ((( '' if useLegend else '%' )))\addlegendentry{((( leg )))}
     ((* endfor *))
     ((* elif zs is defined *))
     ((* for z in zs *))
-    ((* if multiplex *))
     \addplot+[((( linestyle ))), mesh, point meta=((( z )))]
-    table [x index=((( loop.index0 ))), y index=((( loop.length + loop.index0 ))), col sep=comma]{\dtapth};
-    ((* else *))
-    \addplot+[((( linestyle ))), mesh, point meta=((( z )))]
-    table [x index=0,y index=((( loop.index ))),col sep=comma]{\dtapth};
-    ((* endif *))
+    table [x index=((( loop.index0 if multiplex else 0 ))), y index=((( loop.length + loop.index0 if multiplex else loop.index ))), col sep=comma]{\dtapth};
     ((* endfor *))
     ((* elif image is defined *))
     \addplot graphics[xmin=((( limits['xmin'] ))),xmax=((( limits['xmax'] ))),ymin=((( limits['ymin'] ))),ymax=((( limits['ymax'] )))] {\imgpth};

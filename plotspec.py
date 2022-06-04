@@ -10,7 +10,9 @@ import numpy as np
 import scipy.constants as PC
 import matplotlib.pyplot as plt
 import re as regex
+from numpy.linalg import norm
 from numbers import Number
+from collections.abc import Iterable
 from jinja2 import Environment, FileSystemLoader
 import os
 
@@ -44,6 +46,16 @@ UNIT_SCALES: {
     'exa': 18,
     'zetta': 21,
     'yotta': 24}
+
+ANCHORN = [
+    "east", "north east", "north",
+    "north west", "west", "south west",
+    "south", "south east"]
+ANCHORS = np.atleast_3d([
+    [1., 0], [1, 1], [0, 1],
+    [-1, 1], [-1, 0], [-1, -1],
+    [0, -1], [1, -1]])
+ANCHORS /= norm(ANCHORS, axis=1, keepdims=True)
 
 
 def escape_tex(value):
@@ -537,8 +549,7 @@ def mkplot(pth, xs, data, legendorzs,
            xscale=1., yscale=1., zscale=1.,
            x2scale=1., y2scale=1.,
            linestyle=True, marker="*", additional="",
-           thickstyle=True, x2shift=0.0, useLegend=False, useNodes=True,
-           legendPosition="north west"):
+           thickstyle=True, x2shift=0.0, useLegend=None, useNodes=None):
     """
     Makeplot.
 
@@ -626,7 +637,8 @@ def mkplot(pth, xs, data, legendorzs,
     args['linestyle'] = "no markers, solid" if linestyle else "only marks, mark="+marker
     if len(xs.shape) < 2:
         xs = xs.reshape((-1, 1))
-    if isinstance(legendorzs[0], Number) and zlabel is not None:
+    colorLines = isinstance(legendorzs[0], Number) and zlabel is not None
+    if colorLines:
         zs = np.atleast_1d(legendorzs)
         (t_ticks, t_limits) = mkplot_axis('z', zs*zscale, log=logz)
         ticks = {**t_ticks, **ticks}
@@ -644,6 +656,75 @@ def mkplot(pth, xs, data, legendorzs,
                 "{draw=mapped color, fill=mapped color}")
     else:
         args['legend'] = legendorzs
+    plotlabels = {
+        "show_legend": False,
+        "show_nodes": False,
+        "pos_legend": "north west",
+        "pos_nodes": [0.5]*len(legendorzs),
+        "anch_nodes": ["east"]*len(legendorzs)}
+    findnodes = False
+    findnodeanchors = False
+    findlegend = False
+    if colorLines and not useLegend:
+        pass
+    elif isinstance(useLegend, str):
+        plotlabels['pos_legend'] = useLegend
+        plotlabels['show_legend'] = True
+    elif useLegend:
+        plotlabels['show_legend'] = True
+        findlegend = True
+    elif useNodes:
+        plotlabels['show_nodes'] = True
+        if isinstance(useNodes, dict):
+            plotlabels['pos_nodes'] = useNodes['pos_nodes']
+            plotlabels['anch_nodes'] = useNodes['anch_nodes']
+        elif isinstance(useNodes, Iterable) and isinstance(useNodes[0], Number):
+            plotlabels['pos_nodes'] = useNodes
+            findnodeanchors = True
+        else:
+            findnodes = True
+            findnodeanchors = True
+    elif useNodes is None:
+        findnodes = True
+        findnodeanchors = True
+        if useLegend is None:
+            findlegend = True
+        else:
+            plotlabels['show_nodes'] = True
+    args['multiplex'] = (xs.shape[0] < xs.size)
+    if findnodes or findnodeanchors or findlegend:
+        xns = normalize_points(
+            xs,
+            limits['xmin'], limits['xmax'])
+        if args['multiplex']:
+            xns *= np.ones((1, data.shape[1]))
+        yns = normalize_points(data, limits['ymin'], limits['ymax'])
+        ps = np.dstack((xns, yns)).swapaxes(1, 2)
+        if findnodes or findnodeanchors:
+            N = ps.shape[0]
+            M = ps.shape[2]
+            ds = np.zeros(M)
+            for m in range(M):
+                if findnodes:
+                    n, d = furthest_point(
+                        ps[:, :, [m]], ps[:, :, np.arange(M) != m])
+                    plotlabels['pos_nodes'] = n/N
+                    ds[m] = d
+                else:
+                    n = int(plotlabels['pos_nodes'][m]*N)
+                if findnodeanchors:
+                    n = furthest_point(ps[[n], :, [m]]+ANCHORS*0.05, ps)[0]
+                    plotlabels['anch_nodes'][m] = ANCHORN[n]
+            if findlegend and ds.min() > 0.05:
+                findlegend = False
+                plotlabels['show_nodes'] = True
+                plotlabels['show_legend'] = False
+            elif findlegend:
+                plotlabels['show_legend'] = True
+        if findlegend:
+            n = quadrant_counts(ps).argmin()
+            plotlabels['pos_legend'] = ANCHORN[1::2][n]
+    args['plotlabels'] = plotlabels
     args['axistype'] = "axis"
     if logx and logy:
         args['axistype'] = "loglogaxis"
@@ -664,9 +745,6 @@ def mkplot(pth, xs, data, legendorzs,
     args['additional'] = additional
     args['thickstyle'] = thickstyle
     args['x2shift'] = x2shift
-    args['useLegend'] = useLegend
-    args['useNodes'] = useNodes
-    args['legendPosition'] = legendPosition
     np.savetxt(pth+".csv", np.hstack((xs*xscale, data*yscale)), delimiter=',')
     template = texenv.get_template('plot.tex')
     f = open(pth+".tex", 'w')
@@ -859,7 +937,7 @@ def mkcolorplot(pth, xs, ys, zs,
                 x2scale=1., y2scale=1.,
                 linestyle=True):
     """
-    Makecolorplot
+    Makecolorplot.
 
     Parameters
     ----------
@@ -996,3 +1074,102 @@ def prime_factors(n):
             n /= d
         d = d + 1
     return factors
+
+
+def normalize_points(xs, xmin, xmax):
+    """
+    Normalize points between 0 and 1.
+
+    Parameters
+    ----------
+    xs : numpy.ndarray
+        values to normalize.
+    xmin : float
+        minimum value.
+    xmax : float
+        maximum value.
+
+    Returns
+    -------
+    numpy.ndarray
+        normalized xs coordinates.
+
+    """
+    return (xs-xmin)/(xmax-xmin)
+
+
+def furthest_point(ps, qs):
+    """
+    Find the point in ps that is furthest away from the closest point in qs.
+
+    Parameters
+    ----------
+    ps : numpy.ndarray (N,2)
+        Normalized (x,y) coordinates.
+    qs : numpy.ndarray (N, 2, M)
+        Normalized (x,y) coordinates.
+
+    Returns
+    -------
+    kmx : int
+        index of ps furthest away from all qs.
+    dmx : float
+        distance away.
+
+    """
+    kmx = 0
+    dmx = 0.0
+    for k, p0 in enumerate(ps):
+        if not np.all(np.isfinite(p0)):
+            continue
+        d = np.nanmin(norm(qs-p0, axis=1))
+        if d > dmx:
+            kmx = k
+            dmx = d
+    return kmx, dmx
+
+
+def quadrant_counts(ps):
+    """
+    Find the number of points in each quadrant.
+
+    Parameters
+    ----------
+    ps : numpy.ndarray (N,2,M)
+        normalized (x, y) coordinates.
+
+    Returns
+    -------
+    ns : numpy.ndarray(4,)
+        number of points in ps that fall in each quadrant.
+
+    """
+    ms = np.atleast_3d([[1, 1],[-1, 1],[-1, -1],[1, -1]])
+    ns = np.zeros(4, dtype=int)
+    for k, m in enumerate(ms):
+        ns[k] = np.nansum(((ps-0.5)*m > 0).prod(1))
+    return ns
+
+
+def unequal_array(xs):
+    """
+    Stack unequal length arrays with nans for values not specified.
+
+    Parameters
+    ----------
+    xs : list (M)
+        list of lists (max length N).
+
+    Returns
+    -------
+    ys : numpy.ndarray (N,M)
+        xs stacked.
+
+    """
+    N = max([len(x) for x in xs])
+    M = len(xs)
+    ys = np.nan*np.ones((N, M))
+    for k, x in enumerate(xs):
+        n = len(x)
+        ys[:n, k] = x
+    return ys
