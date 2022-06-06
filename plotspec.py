@@ -422,7 +422,7 @@ def mkplot_axis(
                     "{:f}".format(x)
                     for x in minor_log_ticks(minors, lmajors)]
             ticks[prefix+'labels'] = [
-                "\\num{{e{:d}}}".format(x) for x in inc_arange(*lmajors)]
+                "e{:d}".format(x) for x in inc_arange(*lmajors)]
         else:
             ticks[prefix+'log'] = mktick_fstr(1)[0].format(
                 *pgfplots_inc_arange(lmajors[0], lmajors[1], 1))
@@ -447,7 +447,7 @@ def mkplot_axis(
                         "{:f}".format(x)
                         for x in inc_arange(*minors)]
             ticks[prefix+'labels'] = [
-                fstr.format(x) for x in inc_arange(*majors)]
+                fstr.format(np.round(x, prec)+0) for x in inc_arange(*majors)]
         else:
             ticks[prefix+'major'] = fstr.format(*pgfplots_inc_arange(*majors))
             if minors[2] is not None:
@@ -723,7 +723,6 @@ def mkplot(pth, xs, data, legendorzs,
         if findlegend:
             n = quadrant_counts(ps).argmin()
             plotlabels['pos_legend'] = ANCHORN[1::2][n]
-    print(plotlabels)
     args['plotlabels'] = plotlabels
     args['axistype'] = "axis"
     if logx and logy:
@@ -737,6 +736,16 @@ def mkplot(pth, xs, data, legendorzs,
                                  ylabel, ysymbol, yunit,
                                  x2unit, y2unit,
                                  zlabel, zsymbol, zunit)
+    if (
+            logx and x2unit is not None and 'x2labels' in ticks and
+            isinstance(ticks['x2labels'], Iterable)):
+        for k, x in enumerate(ticks['x2labels'][:-1]):
+            ticks['x2labels'][k] = "\\num{{{:s}}}".format(x)
+    if (
+            logy and y2unit is not None and 'y2labels' in ticks and
+            isinstance(ticks['y2labels'], Iterable)):
+        for k, x in enumerate(ticks['y2labels'][:-1]):
+            ticks['y2labels'][k] = "\\num{{{:s}}}".format(x)
     if title is not None:
         args['title'] = title
     args['limits'] = limits
