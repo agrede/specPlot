@@ -707,7 +707,7 @@ def mkplot(pth, xs, data, legendorzs,
             for m in range(M):
                 if findnodes:
                     n, d = furthest_point(
-                        ps[:, :, m], ps[:, :, np.arange(M) != m])
+                        ps[:, :, m], ps[:, :, np.arange(M) != m], bnd=0.1)
                     plotlabels['pos_nodes'][m] = n/N
                     ds[m] = d
                 else:
@@ -1107,7 +1107,7 @@ def normalize_points(xs, xmin, xmax):
     return (xs-xmin)/(xmax-xmin)
 
 
-def furthest_point(ps, qs):
+def furthest_point(ps, qs, bnd=None):
     """
     Find the point in ps that is furthest away from the closest point in qs.
 
@@ -1131,7 +1131,12 @@ def furthest_point(ps, qs):
     for k, p0 in enumerate(ps):
         if not np.all(np.isfinite(p0)):
             continue
-        d = np.nanmin(norm(qs-p0.reshape((1, 2, 1)), axis=1))
+        dbnd = 1.0
+        if bnd is not None:
+            dbnd = (
+                (p0 > (1.-bnd))/(1.+bnd-p0) +
+                (p0 < bnd)/(bnd+p0)).sum()+1.0
+        d = np.nanmin(norm(qs-p0.reshape((1, 2, 1)), axis=1))/dbnd
         if d > dmx:
             kmx = k
             dmx = d
