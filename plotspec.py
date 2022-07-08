@@ -764,6 +764,7 @@ def mkplot(pth, xs, data, legendorzs,
 def mklamplot(pth, lam, data, legendorzs,
               xlabel="Wavelength", xsymbol=None, xunit=None,
               ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
+              zlabel=None, zsymbol=None, zunit=None,
               x2unit=None,
               autoscale=True,
               rngs=None, limits=None, ticks=None,
@@ -829,13 +830,13 @@ def mklamplot(pth, lam, data, legendorzs,
 
     """
     if xunit is None:
-        xunit = "\\um" if xscale==1e9 else "\\nm"
+        xunit = "\\um" if xscale==1e6 else "\\nm"
     if x2unit is None:
         x2unit = "\\meV" if x2scale==1e3 else "\\eV"
     mkplot(pth, lam, data, legendorzs,
            xlabel, xsymbol, xunit,
            ylabel, ysymbol, yunit,
-           zlabel=None, zsymbol=None, zunit=None,
+           zlabel=zlabel, zsymbol=zsymbol, zunit=zunit,
            xfun=elam, xifun=elam,
            x2unit=x2unit,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
@@ -849,6 +850,7 @@ def mklamplot(pth, lam, data, legendorzs,
 def mkEplot(pth, es, data, legendorzs,
             xlabel="Photon Energy", xsymbol=None, xunit=None,
             ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
+            zlabel=None, zsymbol=None, zunit=None,
             x2unit=None,
             autoscale=True,
             rngs=None, limits={}, ticks={},
@@ -916,14 +918,14 @@ def mkEplot(pth, es, data, legendorzs,
     if xunit is None:
         xunit = "\\meV" if xscale==1e3 else "\\eV"
     if x2unit is None:
-        x2unit = "\\um" if x2scale==1e9 else "\\nm"
+        x2unit = "\\um" if x2scale==1e6 else "\\nm"
     if x2shift is None:
         if x2scale == 1e6:
             x2shift=-0.5
     mkplot(pth, es, data, legendorzs,
            xlabel, xsymbol, xunit,
            ylabel, ysymbol, yunit,
-           zlabel=None, zsymbol=None, zunit=None,
+           zlabel=zlabel, zsymbol=zsymbol, zunit=zunit,
            xfun=elam, xifun=elam,
            x2unit=x2unit,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
