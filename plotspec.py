@@ -697,7 +697,7 @@ def mkplot(pth, xs, data, legendorzs,
             xs*xscale,
             limits['xmin'], limits['xmax'])
         if not args['multiplex']:
-            xns *= np.ones((1, data.shape[1]))
+            xns = xns*np.ones((1, data.shape[1]))
         yns = normalize_points(data*yscale, limits['ymin'], limits['ymax'])
         ps = np.dstack((xns, yns)).swapaxes(1, 2)
         if findnodes or findnodeanchors:
