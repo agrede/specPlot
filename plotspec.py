@@ -1,7 +1,7 @@
 """
-Spectrometer Data Plotter
+Spectrometer Data Plotter.
 
-Copyright (C) 2014--2021 Alex J. Grede
+Copyright (C) 2014--2022 Alex J. Grede
 GPL v3, See LICENSE.txt for details
 This module is part of specPlot
 """
@@ -59,6 +59,20 @@ ANCHORS /= norm(ANCHORS, axis=1, keepdims=True)
 
 
 def escape_tex(value):
+    """
+    Jinja filter for escaping in TeX documents.
+
+    Parameters
+    ----------
+    value : str
+        unsafe string.
+
+    Returns
+    -------
+    newval : str
+        safe string.
+
+    """
     newval = value
     for pattern, replacement in LATEX_SUBS:
         newval = pattern.sub(replacement, newval)
@@ -89,7 +103,7 @@ def first_where(expr):
 
 def elam(x):
     """
-    Change wavelength to energy and reverse
+    Change wavelength to energy and reverse.
 
     Parameters
     ----------
@@ -105,7 +119,7 @@ def elam(x):
 
 def phie(x, phi):
     """
-    Change phi num/unit wavelength to num/per unit energy and reverse
+    Change phi num/unit wavelength to num/per unit energy and reverse.
 
     Parameters
     ----------
@@ -122,7 +136,7 @@ def phie(x, phi):
 
 def data_minmax(xmin, xmax, step, inner):
     """
-    floor / ceiling divide depending on inner
+    Return floor / ceiling division depending on inner.
 
     Parameters
     ----------
@@ -150,7 +164,7 @@ def data_minmax(xmin, xmax, step, inner):
 
 def data_ranges(x, major, minor, inner=False):
     """
-    Find data ranges
+    Find data ranges.
 
     Parameters
     ----------
@@ -207,7 +221,7 @@ def data_ranges(x, major, minor, inner=False):
 
 def data_log_ranges(xs, inner=False):
     """
-    log10 minimum and maximum values
+    log10 minimum and maximum values.
 
     Parameters
     ----------
@@ -298,6 +312,24 @@ def make_labels(xlabel, xsymbol, xunit,
 
 
 def mktick_fstr(step, single=False):
+    """
+    Make formating strings for tickmarks.
+
+    Parameters
+    ----------
+    step : float
+        step size.
+    single : bool, optional
+        make single (True) or range (False). The default is False.
+
+    Returns
+    -------
+    str
+        formatting string.
+    prec : int
+        number of decimal places.
+
+    """
     prec = max(int(np.ceil(-np.log10(step))), 0)
     fsing = ("{:0."+str(prec)+"f}")
     if single:
@@ -308,7 +340,9 @@ def mktick_fstr(step, single=False):
 
 def inc_arange(start, stop, step=1):
     """
-    np.arange with inclusive stop
+    Evenly spaced data with inclusive stop.
+
+    Wrapper around np.arange
 
     Parameters
     ----------
@@ -328,8 +362,7 @@ def inc_arange(start, stop, step=1):
 
 def pgfplots_inc_arange(start, stop, step):
     """
-    Returns tuple for generating tikz style ranges
-    i.e. {start,start+step,...,stop}
+    Return tuple for generating tikz style ranges i.e. {start,start+step,...,stop}.
 
     Parameters
     ----------
@@ -346,7 +379,7 @@ def pgfplots_inc_arange(start, stop, step):
 
 def minor_log_ticks(minors, lmajors):
     """
-    Base 10 minor tick-marks array
+    Make base 10 minor tick-marks array.
 
     Parameters
     ----------
@@ -370,7 +403,7 @@ def mkplot_axis(
         prefix, xs, ifun=None, log=False, inner=False, major=7, minor=7,
         xscale=1., x2scale=1., allticks=False):
     """
-    Make axis limits and ticks
+    Make axis limits and ticks.
 
     Parameters
     ----------
@@ -464,7 +497,7 @@ def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
                xfun=None, xifun=None, yfun=None, yifun=None,
                xscale=1., yscale=1., x2scale=1., y2scale=1.):
     """
-    Filter and setup limits and ticks template arguments
+    Filter and setup limits and ticks template arguments.
 
     Parameters
     ----------
@@ -766,7 +799,7 @@ def mklamplot(pth, lam, data, legendorzs,
               ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
               zlabel=None, zsymbol=None, zunit=None,
               x2unit=None,
-              autoscale=True,
+              autoscale=True, title=None,
               rngs=None, limits=None, ticks=None,
               logx=False, logy=False, logz=False,
               xscale=1e9, x2scale=1., linestyle=True,
@@ -799,6 +832,8 @@ def mklamplot(pth, lam, data, legendorzs,
         x2-axis siunitx style units (will use eV if x2scale=1, meV if x2scale=1e3)
     autoscale : bool, optional
         divide y values by maximum value
+    title : str, optional
+        title for plot
     rngs : dict, optional
         filter out data given {'x': [min, max], 'y': [min, max]}
     limits : dict, optional
@@ -838,7 +873,7 @@ def mklamplot(pth, lam, data, legendorzs,
            ylabel, ysymbol, yunit,
            zlabel=zlabel, zsymbol=zsymbol, zunit=zunit,
            xfun=elam, xifun=elam,
-           x2unit=x2unit,
+           x2unit=x2unit, title=title,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
            logx=logx, logy=logy, logz=logz,
            xscale=xscale, x2scale=x2scale, linestyle=linestyle,
@@ -852,7 +887,7 @@ def mkEplot(pth, es, data, legendorzs,
             ylabel="Photon Flux", ysymbol=None, yunit="\\arb",
             zlabel=None, zsymbol=None, zunit=None,
             x2unit=None,
-            autoscale=True,
+            autoscale=True, title=None,
             rngs=None, limits={}, ticks={},
             logx=False, logy=False, logz=False,
             xscale=1., x2scale=1e9, linestyle=True,
@@ -885,6 +920,8 @@ def mkEplot(pth, es, data, legendorzs,
         x2-axis siunitx style units (will use nm if x2scale=1e9, um if 1e6)
     autoscale : bool, optional
         divide y values by maximum value
+    title : str, optional
+        title for plot
     rngs : dict, optional
         filter out data given {'x': [min, max], 'y': [min, max]}
     limits : dict, optional
@@ -927,7 +964,7 @@ def mkEplot(pth, es, data, legendorzs,
            ylabel, ysymbol, yunit,
            zlabel=zlabel, zsymbol=zsymbol, zunit=zunit,
            xfun=elam, xifun=elam,
-           x2unit=x2unit,
+           x2unit=x2unit, title=title,
            autoscale=autoscale, rngs=rngs, limits=limits, ticks=ticks,
            logx=logx, logy=logy, logz=logz,
            xscale=xscale, x2scale=x2scale, linestyle=linestyle,
@@ -1076,7 +1113,20 @@ def mkcolorplot(pth, xs, ys, zs,
 
 
 def prime_factors(n):
-    """Returns all the prime factors of a positive integer"""
+    """
+    Return all prime factors of a positive integer.
+
+    Parameters
+    ----------
+    n : int
+        integer to factor.
+
+    Returns
+    -------
+    factors : list
+        prime factors of n.
+
+    """
     factors = []
     d = 2
     while n > 1:
