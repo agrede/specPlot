@@ -96,7 +96,7 @@ texenv.trim_blocks = True
 
 def first_where(expr):
     """
-    index of the first occurrence of non-zero expr or None if all zero
+    Return the index of the first occurrence of non-zero expr or None if all zero.
     """
     return next((k for k, v in enumerate(expr) if v), None)
 
@@ -134,6 +134,23 @@ def phie(x, phi):
     return (np.atleast_2d(x/elam(x)).T*phi)
 
 
+def signed_ceil(x):
+    """
+    Signed ceiling function (complement to trunc).
+
+    Parameters
+    ----------
+    x : array_like
+        Input data.
+
+    Returns
+    -------
+    numpy.ndarray or scalar
+        sign(x)*ceil(abs(x)).
+    """
+    return np.sign(x)*np.ceil(np.abs(x))
+
+
 def data_minmax(xmin, xmax, step, inner):
     """
     Return floor / ceiling division depending on inner.
@@ -156,10 +173,23 @@ def data_minmax(xmin, xmax, step, inner):
     max : float
         nearest step size away from xmax (floor for inner)
     """
+    eps = np.finfo(type(step)).resolution
+    xs = np.array([xmin, xmax])
+    ys = np.zeros(2)
+    xmid = xs.mean()
+    tmid = step*np.trunc(xmid/(step-eps))
     if inner:
-        return (step*np.ceil(xmin/step), step*np.floor(xmax/step))
+        if (xmax-xmin)/(step-eps)-1. < -eps:
+            for xtst in np.arange(-1, 2)*step+tmid:
+                if xmin <= xtst and xtst <= xmax:
+                    return (xtst, xtst)
+        else:
+            ys = step*np.trunc((xs-tmid)/(step-eps))+tmid
     else:
-        return (step*np.floor(xmin/step), step*np.ceil(xmax/step))
+        sngs = np.array([-1, 1])
+        ys = step*signed_ceil((xs-xmid)/(step-eps))+tmid
+        ys += sngs*step*(np.abs(ys-xs)-step < -eps)
+    return tuple(ys)
 
 
 def data_ranges(x, major, minor, inner=False):
