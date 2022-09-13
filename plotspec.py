@@ -270,7 +270,7 @@ def data_log_ranges(xs, inner=False):
     xmax = np.nanmax(xs)
     xmin = np.nanmin(xs)
     lmajors = [int(t) for t in data_minmax(
-        np.log10(xmin), np.log10(xmax), 1, inner)]
+        np.log10(xmin), np.log10(xmax), 1., inner)]
     majors = [10**t for t in lmajors]
     minorsteps = [10**(t0+t1+1*inner) for t0, t1 in zip(lmajors, [0, -1])]
     minors = [t0*t1 for t0, t1 in zip(
@@ -588,7 +588,11 @@ def mkplot_gen(xs, data, autoscale, rngs, limits, ticks,
             x2scale*xfun(np.array([limits['xmin'], limits['xmax']])/xscale),
             xifun, log=logx, inner=True, xscale=xscale, x2scale=x2scale)
         ticks = {**t_ticks, **ticks}
-    (t_ticks, t_limits) = mkplot_axis('y', data*yscale, log=logy)
+    if 'ymin' in limits and 'ymax' in limits:
+        (t_ticks, t_limits) = mkplot_axis(
+            'y', np.array([limits['ymin'], limits['ymax']]), log=logy)
+    else:
+        (t_ticks, t_limits) = mkplot_axis('y', data*yscale, log=logy)
     ticks = {**t_ticks, **ticks}
     limits = {**t_limits, **limits}
     if yfun is not None:
