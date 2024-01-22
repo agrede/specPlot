@@ -267,10 +267,12 @@ def data_log_ranges(xs, inner=False):
     lmajors : tuple(int)
         log10 major min, max
     """
-    xmax = np.nanmax(xs)
-    xmin = np.nanmin(xs)
+    lxmax = np.nanmax(np.log10(xs))
+    lxmin = np.nanmin(np.log10(xs))
+    xmax = 10**lxmax
+    xmin = 10**lxmin
     lmajors = [int(t) for t in data_minmax(
-        np.log10(xmin), np.log10(xmax), 1., inner)]
+        lxmax, lxmin, 1., inner)]
     majors = [10**t for t in lmajors]
     minorsteps = [10**(t0+t1+1*inner) for t0, t1 in zip(lmajors, [0, -1])]
     minors = [t0*t1 for t0, t1 in zip(
@@ -992,7 +994,9 @@ def mkEplot(pth, es, data, legendorzs,
         x2unit = "\\um" if x2scale==1e6 else "\\nm"
     if x2shift is None:
         if x2scale == 1e6:
-            x2shift=-0.5
+            x2shift = -0.5
+        else:
+            x2shift = 0.0
     mkplot(pth, es, data, legendorzs,
            xlabel, xsymbol, xunit,
            ylabel, ysymbol, yunit,
@@ -1138,6 +1142,7 @@ def mkcolorplot(pth, xs, ys, zs,
     args['ticks'] = ticks
     args['tickcolor'] = "white"
     args['image'] = True
+    args['plotlabels'] = {'pos_legend': "north west"}
     plt.imsave(pth+".png", zs, vmin=limits['zmin'], vmax=limits['zmax'],
                origin='lower', cmap='viridis')
     template = texenv.get_template('plot.tex')
